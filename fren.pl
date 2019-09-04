@@ -1,44 +1,90 @@
 :- dynamic(mot/1).
+:- discontiguous(mot/1).
+:- use_module(library(readutil)).
 
-verb_mot(X) :-
-    mot(X), functor(X, verb, _).
+%% verb_mot(X) :-
+%%     mot(X), functor(X, verb, _).
+
+affichez_stats(stats(0, 0)) :- affichez_stats(0, 0, 0), !.
+affichez_stats(stats(Correct, Total)) :-
+    affichez_stats(Correct, Total, (Correct / Total) * 100).
+affichez_stats(Correct, Total, Accuracy) :-
+    format('~nAsked     ~d~nCorrect   ~d~nAccuracy  ~1f%~n',
+           [Total, Correct, Accuracy]).
 
 quiz_all :-
-    findall(X, verb_mot(X), Verbs),
-    random_permutation(Verbs, RandVerbs),
-    quiz_verbs(RandVerbs).
+    findall(X, mot(X), Mots),
+    random_permutation(Mots, L),
+    catch(quiz_mots(L, Stats), passez_tout_mots(Stats),
+          (write('Aborted'), nl)),
+    affichez_stats(Stats).
 
-quiz_verbs([]).
-quiz_verbs([verb(Infinitif, Anglaise, A, B, C, D, E, F)|L]) :-
-    repeat,
-    write(Anglaise), nl,
-    write('infinitif? '), read(Infinitif),
-    (repeat, write('je ... '), read(A)),
-    (repeat, write('te ... '), read(B)),
-    (repeat, write('il/elles/on ... '), read(C)),
-    (repeat, write('nous ... '), read(D)),
-    (repeat, write('vous ... '), read(E)),
-    (repeat, write('ils/elles ... '), read(F)),
+write_anglais(Anglais) :-
+    format('En anglaise: "~a"', [Anglais]).
+
+readln(X) :-
+    read_line_to_string(current_input, Str),
+    atom_string(X, Str).
+
+quiz_question(Question, Réponse,
+              stats(Correct, Total),
+              Stats) :-
+    write(Question),
+    readln(Line),
+    (Line = 'SKIP', throw(passez_ce_mot(stats(Correct, Total)));
+     Line = 'EXIT', throw(passez_tout_mots(stats(Correct, Total)));
+     (Line = Réponse,
+      Stats = stats(Correct+1, Total+1);
+      Line \= Réponse,
+      quiz_question(Question, Réponse, stats(Correct, Total+1), Stats))).
+
+quiz_questions([], Stats, Stats).
+quiz_questions([Question-Réponse|L], StatsIn, StatsOut) :-
+    quiz_question(Question, Réponse, StatsIn, Stats),
+    quiz_questions(L, Stats, StatsOut).
+
+quiz_mots([]).
+quiz_mots(L, Stats) :- quiz_mots(L, stats(0, 0), Stats).
+quiz_mots([Mot|L], StatsIn, StatsOut) :-
     nl,
-    quiz_verbs(L).
+    catch(quiz_mot(Mot, StatsIn, Stats), passez_ce_mot(Stats), (nl, true)),
+    quiz_mots(L, Stats, StatsOut).
 
-régulier(Infinitif, Anglais) :-
-    régulier_er(Infinitif, Anglais);
-    régulier_re(Infinitif, Anglais);
-    régulier_ir(Infinitif, Anglais).
+quiz_mot(phrase(Anglais, Français), StatsIn, StatsOut) :-
+    write_anglais(Anglais), nl,
+    quiz_questions(['? '-Français], StatsIn, StatsOut).
+quiz_mot(verb(Infinitif, Anglais, A, B, C, D, E, F), StatsIn, StatsOut) :-
+    write_anglais(Anglais), nl,
+    quiz_questions(['infinitif? '-Infinitif,
+                    'je ... '-A,
+                    'te ... '-B,
+                    'il/elles/on ... '-C,
+                    'nous ... '-D,
+                    'vous ... '-E,
+                    'ils/elles ... '-F],
+                   StatsIn, StatsOut).
+
+régulier(Infinitif, Anglais, Verb) :-
+    régulier_er(Infinitif, Anglais, Verb);
+    régulier_re(Infinitif, Anglais, Verb);
+    régulier_ir(Infinitif, Anglais, Verb).
+
+définez_régulier(Infinitif, Anglais) :-
+    régulier(Infinitif, Anglais, Verb),
+    (mot(Verb), ! ; assertz(mot(Verb))).
 
 % Chapitre 2, Page 47
 
-régulier_er(Infinitif, Anglais) :-
+régulier_er(Infinitif, Anglais,
+            verb(Infinitif, Anglais,
+                 First, Second, Third, Firsts, SecondFormal, Thirds)) :-
     atom_concat(Root, 'er', Infinitif),
     atom_concat(Root, 'e', First),
     atom_concat(Root, 'es', Second),
     First = Third,
     atom_concat(Root, 'ons', Firsts),
     atom_concat(Root, 'ez', SecondFormal),
-    atom_concat(Root, 'ent', Thirds),
-    assertz(mot(verb(Infinitif, Anglais,
-                     First, Second, Third, Firsts, SecondFormal, Thirds))).
+    atom_concat(Root, 'ent', Thirds).
 
 %régulier(chercher, 'to look for').
 mot(verb(chercher, 'to look for',
@@ -106,61 +152,63 @@ mot(verb(vouloir, 'to want',
          veux, veux, veut, voulons, voulez, veulent)).
 
 % Chapitre 6, Page 126
-mot(verb(commencer, 'to begin',
-         commence, commences, commence,
-         commençons, commencez, commencent)).
-mot(verb(préférer, 'to prefer',
-         préfère, préfères, préfère,
-         préférons, préférez, préfèrent)).
-mot(verb(espérer, 'to hope',
-         espère, espères, espère,
-         espérons, espérez, espèrent)).
-mot(verb(répéter, 'to repeat',
-         répète, répètes, répète,
-         répétons, répétez, répètent)).
-mot(verb(payer, 'to pay',
-         paie, paies, paie, payons, payez, paient)).
-mot(verb(employer, 'to employ',
-         employie, employies, employie, employons, employez, emploient)).
-mot(verb(envoyer, 'to send',
-         envoyie, envoyies, envoyie, envoyons, envoyez, envoient)).
-mot(verb(essayer, 'to try (on)',
-         essayie, essayies, essayie, essayons, essayez, essaient)).
-
-mot(verb(acheter, 'to buy',
-         achète, achètes, achète,
-         achetons, achetez, achètent)).
-
+%mot(verb(commencer, 'to begin',
+%         commence, commences, commence,
+%         commençons, commencez, commencent)).
+%mot(verb(manger, 'to eat',
+%         menge, menges, menge,
+%         mengeons, mengez, mengent)).
+%mot(verb(préférer, 'to prefer',
+%         préfère, préfères, préfère,
+%         préférons, préférez, préfèrent)).
+%mot(verb(espérer, 'to hope',
+%         espère, espères, espère,
+%         espérons, espérez, espèrent)).
+%mot(verb(répéter, 'to repeat',
+%         répète, répètes, répète,
+%         répétons, répétez, répètent)).
+%mot(verb(payer, 'to pay',
+%         paie, paies, paie, payons, payez, paient)).
+%mot(verb(employer, 'to employ',
+%         employie, employies, employie, employons, employez, emploient)).
+%mot(verb(envoyer, 'to send',
+%         envoyie, envoyies, envoyie, envoyons, envoyez, envoient)).
+%mot(verb(essayer, 'to try (on)',
+%         essayie, essayies, essayie, essayons, essayez, essaient)).
+%mot(verb(acheter, 'to buy',
+%         achète, achètes, achète,
+%         achetons, achetez, achètent)).
+%
 % Chapitre 8 - Page 163
 
-régulier_re(Infinitif, Anglais) :- 
+régulier_re(Infinitif, Anglais,
+            verb(Infinitif, Anglais,
+                 First, Second, Third, Firsts, SecondFormal, Thirds)) :- 
     atom_concat(Root, 're', Infinitif),
     atom_concat(Root, 's', First),
     atom_concat(Root, 's', Second),
     Root = Third,
     atom_concat(Root, 'ons', Firsts),
     atom_concat(Root, 'ez', SecondFormal),
-    atom_concat(Root, 'ent', Thirds),
-    assertz(mot(verb(Infinitif, Anglais,
-                     First, Second, Third, Firsts, SecondFormal, Thirds))).
+    atom_concat(Root, 'ent', Thirds).
 
-:- régulier_re(répondre, 'to answer').
-:- régulier_re(attendre, 'to wait for').
-:- régulier_re(descendre, 'to descend').
-:- régulier_re(entendre, 'to hear').
-:- régulier_re(perdre, 'to lose').
-:- régulier_re(prendre, 'to take').
-:- régulier_re(rendre, 'to return (something), to render, to make').
-:- régulier_re(répondre, 'to answer').
-:- régulier_re(vendre, 'to sell').
+:- définez_régulier(répondre, 'to answer').
+:- définez_régulier(attendre, 'to wait for').
+:- définez_régulier(descendre, 'to descend').
+:- définez_régulier(entendre, 'to hear').
+:- définez_régulier(perdre, 'to lose').
+:- définez_régulier(prendre, 'to take').
+:- définez_régulier(rendre, 'to return (something), to render, to make').
+:- définez_régulier(répondre, 'to answer').
+:- définez_régulier(vendre, 'to sell').
 
 % Chapitre 11 - Page 226
 
 régulier_ir(Infinitif, Anglais,
             verb(Infinitif, Anglais,
                  First, Second, Third,
-                 Firsts, Seconds, Thirds) :- 
-    atom_concat(Root, 'is', Infinitif),
+                 Firsts, Seconds, Thirds)) :- 
+    atom_concat(Root, 'ir', Infinitif),
     atom_concat(Root, 'is', First),
     atom_concat(Root, 'it', Second),
     Root = Third,
@@ -168,18 +216,25 @@ régulier_ir(Infinitif, Anglais,
     atom_concat(Root, 'issez', Seconds),
     atom_concat(Root, 'issent', Thirds).
 
-assert_régulier_ir(Infinitif, Anglais) :-
-    régulier_ir(Infinitif, Anglais, Verb),
-    assertz(mot(Verb)).
+:- définez_régulier(finir, 'to finish').
+:- définez_régulier(applaudir, 'to applaud').
+:- définez_régulier(choisir, 'to choose').
+:- définez_régulier(obéir, 'to obey').
+:- définez_régulier(réflechir, 'to reflect').
+:- définez_régulier(réussir, 'to succeed').
+:- définez_régulier(finir, 'to finish').
 
-:- assert_régulier_ir(finir, 'to finish').
-:- assert_régulier_ir(applaudir, 'to applaud').
-:- assert_régulier_ir(choisir, 'to choose').
-:- assert_régulier_ir(obéir, 'to obey').
-:- assert_régulier_ir(réflechir, 'to reflect').
-:- assert_régulier_ir(réussir, 'to succeed').
-:- assert_régulier_ir(finir, 'to finish').
-:- assert_régulier_ir(finir, 'to finish').
-:- assert_régulier_ir(finir, 'to finish').
-:- assert_régulier_ir(finir, 'to finish').
-:- assert_régulier_ir(finir, 'to finish').
+% Chapter ?
+% phrases for forming questiong
+mot(phrase('(is it that?)', 'est-ce que')).
+mot(phrase('who ...', 'qui')).
+mot(phrase('what', 'que')).
+mot(phrase('how', 'comment')).
+mot(phrase('when', 'quand')).
+mot(phrase('where', 'oú')).
+mot(phrase('why', 'pourquoi')).
+mot(phrase('because', 'parce que')).
+mot(phrase('how many...', 'combien de')).
+mot(phrase('which (m)', 'quel')).
+mot(phrase('which (f)', 'quelle')).
+mot(phrase('what is it that...', 'qu''est-ce que')).

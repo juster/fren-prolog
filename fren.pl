@@ -23,7 +23,8 @@ quiz_all :-
     permute_list(Mots0, Mots),
     catch(quiz_mots(Mots, Stats), passez_tout_mots(Stats),
           (write('Aborted'), nl)),
-    affichez_stats(Stats).
+    affichez_stats(Stats),
+    !.
 
 write_anglais(Anglais) :-
     format('En anglaise: "~a"', [Anglais]).
@@ -57,12 +58,19 @@ select_random(X, [Y|L0], [Y|L]) :-
     select_random(X, L0, L), !.
 select_random(X, [X|L], L).
 
-permute_list(L0, L) :- randomize, permute_list(L0, [], L).
-permute_list([], L, L).
-permute_list(L0, L1, L) :-
-    L0 \= [],
-    select_random(X, L0, L2),
-    permute_list(L2, [X|L1], L).
+key_random([], []).
+key_random([V|L0], [K-V|L]) :- random(K), key_random(L0, L).
+
+pair_values([], []).
+pair_values([_-V|L0], [V|L]) :- pair_values(L0, L).
+
+permute_list(L0, L) :-
+    randomize,
+    permute_list_(L0, L).
+permute_list_(L0, L) :-
+    key_random(L0, Keyed0),
+    keysort(Keyed0, Keyed),
+    pair_values(Keyed, L).
 
 quiz_mots([]).
 quiz_mots(L, Stats) :- quiz_mots(L, stats(0, 0), Stats).
@@ -72,9 +80,9 @@ quiz_mots([Mot|L], StatsIn, StatsOut) :-
     catch(quiz_mot(Mot, StatsIn, Stats), passez_ce_mot(Stats), (nl, true)),
     quiz_mots(L, Stats, StatsOut).
 
-quiz_mot(phrase(Anglais, 'Français'), StatsIn, StatsOut) :-
+quiz_mot(phrase(Anglais, Francais), StatsIn, StatsOut) :-
     write_anglais(Anglais), nl,
-    quiz_questions(['? '-'Français'], StatsIn, StatsOut).
+    quiz_questions(['? '-Francais], StatsIn, StatsOut).
 quiz_mot(verb(Infinitif, Anglais, A, B, C, D, E, F), StatsIn, StatsOut) :-
     write_anglais(Anglais), nl,
     quiz_questions(['infinitif? '-Infinitif,
@@ -247,4 +255,4 @@ mot(phrase('which (m)', 'quel')).
 mot(phrase('which (f)', 'quelle')).
 mot(phrase('what is it that...', 'qu''est-ce que')).
 
-%:- initialization((quiz_all, halt)).
+:- initialization((quiz_all, halt)).

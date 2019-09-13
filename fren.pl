@@ -242,17 +242,17 @@ mot(verb(avoir, 'to have',
 
 % Chapter ?
 % phrases for forming questiong
-mot(phrase('(is it that?)', 'est-ce que')).
-mot(phrase('who ...', 'qui')).
-mot(phrase('what', 'que')).
-mot(phrase('how', 'comment')).
-mot(phrase('when', 'quand')).
-mot(phrase('where', 'oú')).
-mot(phrase('why', 'pourquoi')).
-mot(phrase('because', 'parce que')).
-mot(phrase('how many (of)...', 'combien de')).
-mot(phrase('which (m)', 'quel')).
-mot(phrase('which (f)', 'quelle')).
-mot(phrase('what is it that...', 'qu''est-ce que')).
+%%mot(adverbe_interrogatif('(is it that?)', 'est-ce que')).
+mot(pronom_interrogatif('who ...', 'qui')).
+mot(pronom_interrogatif('what', 'que')).
+mot(adverb_interrogatif('how', 'comment')).
+mot(adverb_interrogatif('when', 'quand')).
+mot(adverb_interrogatif('where', 'oú')).
+mot(adverb_interrogatif('why', 'pourquoi')).
+mot(conjunction('because', 'parce que')).
+mot(pronom_interrogatif('how many (of)...', 'combien de')).
+mot(pronom_interrogatif('which (m)', 'quel')).
+mot(pronom_interrogatif('which (f)', 'quelle')).
+%%mot(adverb_interrogatif('what is it that...', 'qu''est-ce que')).
 
 :- initialization((quiz_all, halt)).

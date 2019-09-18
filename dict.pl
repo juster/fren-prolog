@@ -285,3 +285,16 @@ conj_limparfait(Conj, [Fst, Snd, Thd, FstPl, SndPl, ThdPl]) :-
     atom_concat(Root, 'ions', FstPl),
     atom_concat(Root, 'iez', SndPl),
     atom_concat(Root, 'aient', ThdPl).
+
+append_limparfait([]).
+append_limparfait([verbe(Inf, Ang, Conj0)|L]) :-
+    conj_limparfait(Conj0, Limp),
+    retractall(mot(verbe(Inf, Ang, Conj))),
+    append(Conj0, Limp, Conj),
+    assertz(mot(verbe(Inf, Ang, Conj))),
+    append_limparfait(L).
+append_limparfait :-
+    findall(verbe(Inf, Ang, Conj), mot(verbe(Inf, Ang, Conj)), L),
+    append_limparfait(L).
+
+:- initialization(append_limparfait).

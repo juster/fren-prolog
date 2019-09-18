@@ -50,11 +50,11 @@ quiz_questions([Question-Response|L], StatsIn, StatsOut) :-
     quiz_question(Question, Response, StatsIn, Stats),
     quiz_questions(L, Stats, StatsOut).
 
-select_random(X, [X|L], L) :-
-    random(R), length(L, N), R < (1/(N+1)), !.
-select_random(X, [Y|L0], [Y|L]) :-
-    select_random(X, L0, L), !.
-select_random(X, [X|L], L).
+%% select_random(X, [X|L], L) :-
+%%     random(R), length(L, N), R < (1/(N+1)), !.
+%% select_random(X, [Y|L0], [Y|L]) :-
+%%     select_random(X, L0, L), !.
+%% select_random(X, [X|L], L).
 
 key_random([], []).
 key_random([V|L0], [K-V|L]) :- random(K), key_random(L0, L).
@@ -109,15 +109,17 @@ translate(phrase(Francais, Anglais), Francais, Anglais).
 %%                     [Infinitif]),
 %%      throw(error(ErrMsg))).
 
-verbe_questionnes(Infinitif, [A, B, C, D, E, F],
+verbe_questionnes(Infinitif, [A, B, C, D, E, F, PasseAux-PassePart],
                   ['infinitif? '-Infinitif,
                    'je ... '-A,
                    'tu ... '-B,
                    'il/elles/on ... '-C,
                    'nous ... '-D,
                    'vous ... '-E,
-                   'ils/elles ... '-F]).
-    
+                   'ils/elles ... '-F,
+                   'Passe Compose? (aux + part)'-G]) :-
+    atom_concat(PasseAux, ' ', Tmp),
+    atom_concat(Tmp, PassePart, G).
 
 quiz_mot(verbe_pronominal(Infinitif, Anglais, Conj),
          StatsIn, StatsOut) :-

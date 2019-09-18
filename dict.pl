@@ -259,3 +259,29 @@ definez_like_sortir(Infinitif, Anglais) :-
 :- initialization(definez_like_sortir(partir, 'to leave (a place)')).
 :- initialization(definez_like_sortir(sentir, 'to smell')).
 :- initialization(definez_like_sortir(servir, 'to serve')).
+
+% L'imparfait
+
+conj_limparfait(Conj, [étais, étais, était, étions, étiez, étaient]) :-
+    nth(4, Conj, sommes),
+    !.
+
+conj_limparfait(Conj, [mangeais, mangeais, mangeait,
+                       mangions, mangiez, mangeaient]) :-
+    nth(4, Conj, mangeons),
+    !.
+
+conj_limparfait(Conj, [commençais, commençais, commençait,
+                       commencions, commenciez, commençaient]) :-
+    nth(4, Conj, commençons),
+    !.
+
+conj_limparfait(Conj, [Fst, Snd, Thd, FstPl, SndPl, ThdPl]) :-
+    nth(4, Conj, Nous),
+    atom_concat(Root, 'ons', Nous),
+    atom_concat(Root, 'ais', Fst),
+    atom_concat(Root, 'ais', Snd),
+    atom_concat(Root, 'ait', Thd),
+    atom_concat(Root, 'ions', FstPl),
+    atom_concat(Root, 'iez', SndPl),
+    atom_concat(Root, 'aient', ThdPl).

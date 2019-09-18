@@ -109,7 +109,7 @@ translate(phrase(Francais, Anglais), Francais, Anglais).
 %%                     [Infinitif]),
 %%      throw(error(ErrMsg))).
 
-verbe_questionnes(Infinitif, [A, B, C, D, E, F, PasseAux-PassePart],
+verbe_questionnes(Infinitif,
                   ['infinitif? '-Infinitif,
                    'je ... '-A,
                    'tu ... '-B,
@@ -118,20 +118,44 @@ verbe_questionnes(Infinitif, [A, B, C, D, E, F, PasseAux-PassePart],
                    'vous ... '-E,
                    'ils/elles ... '-F,
                    'Passe Compose? (aux + part)'-G]) :-
-    atom_concat(PasseAux, ' ', Tmp),
+    conj_présent(Infinitif, [A, B, C, D, E, F]),
+    passé_composé(Infinitif, Aux, PassePart),
+    atom_concat(Aux, ' ', Tmp),
     atom_concat(Tmp, PassePart, G).
 
-quiz_mot(verbe_pronominal(Infinitif, Anglais, Conj),
+verbe_pronominal_questionnes(Infinitif,
+                             ['infinitif? '-SeInfinitif,
+                              'je ... '-MeJe,
+                              'tu ... '-TeTu,
+                              'il/elles/on ... '-SeIl,
+                              'nous ... '-NousNous,
+                              'vous ... '-VousVous,
+                              'ils/elles ... '-SeIls,
+                              'Passe Compose? (aux + part)'-PasseComp]) :-
+    conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]),
+    passé_composé(Infinitif, Aux, PassePart),
+    atom_concat('se ', Infinitif, SeInfinitif),
+    atom_concat('me ', Je, MeJe),
+    atom_concat('te ', Tu, TeTu),
+    atom_concat('se ', Il, SeIl),
+    atom_concat('nous ', Nous, NousNous),
+    atom_concat('vous ', Vous, VousVous),
+    atom_concat('se ', Ils, SeIls),
+    atom_concat('se ', Aux, Tmp1),
+    atom_concat(Tmp1, ' ', Tmp2),
+    atom_concat(Tmp2, PassePart, PasseComp).
+
+quiz_mot(verbe_pronominal(Infinitif, Anglais),
          StatsIn, StatsOut) :-
     !,
-    verbe_questionnes(Infinitif, Conj, QAs),
+    verbe_pronominal_questionnes(Infinitif, QAs),
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 
-quiz_mot(verbe(Infinitif, Anglais, Conj),
+quiz_mot(verbe(Infinitif, Anglais),
          StatsIn, StatsOut) :-
     !,
-    verbe_questionnes(Infinitif, Conj, QAs),
+    verbe_questionnes(Infinitif, QAs),
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 

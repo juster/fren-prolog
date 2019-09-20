@@ -1,5 +1,5 @@
 %%:- use_module(library(readutil)).
-:- dynamic(mot/1, i_passé_composé/3).
+:- dynamic(mot/1, i_passé_composé/3, i_conj_présent/2).
 :- discontiguous(mot/1, i_passé_composé/3, i_conj_présent/2,
                  conj_présent_régulier/2).
 
@@ -107,7 +107,7 @@ i_conj_présent(venir, [viens, viens, vient, venons, venez, viennent]).
 i_passé_composé(venir, être, _).
 
 mot(verbe(devenir, 'to become')).
-i_conj_présent([deviens, deviens, devient, devenons, devenez, deviennent]).
+i_conj_présent(devenir, [deviens, deviens, devient, devenons, devenez, deviennent]).
 i_passé_composé(devenir, être, _).
 
 mot(verbe(revenir, 'to come back')).
@@ -274,7 +274,7 @@ définez_régulier_pronominal(Infinitif, Anglais) :-
 :- initialization(définez_régulier_pronominal(peigner, 'to comb')).
 :- initialization(définez_régulier_pronominal(raser, 'to shave')).
 :- initialization(définez_régulier_pronominal(maquiller, 'to put on make up')).
-:- initialization(définez_régulier_pronominal(habiller, 'to get dressed')).
+:- initialization(définez_régulier_pronominal(habiller, 'to dress (someone)')).
 :- initialization(définez_régulier_pronominal(promener, 'to take for a walk')).
 :- initialization(définez_régulier_pronominal(dépêcher, 'to hurry up')).
 :- initialization(définez_régulier_pronominal(amuser, 'to entertain')).
@@ -310,53 +310,35 @@ definez_comme_sortir(Infinitif, Anglais) :-
     conj_présent_comme_sortir(Infinitif, Conj),
     passé_participe_comme_sortir(Infinitif, PassePart),
     définez_mot(verbe(Infinitif, Anglais)),
-    retractall(i_conj_régulier(Infinitif, _)),
-    assertz(i_conj_régulier(Infinitif, Conj)),
+    retractall(i_conj_présent(Infinitif, _)),
+    assertz(i_conj_présent(Infinitif, Conj)),
     retractall(i_passé_composé(Infinitif, _, _)),
     assertz(i_passé_composé(Infinitif, être, PassePart)).
 
 :- initialization(definez_comme_sortir(sortir, 'to go out')).
 :- initialization(definez_comme_sortir(dormir, 'to sleep')).
-:- initialization(definez_comme_sortir(mentir, 'to lie')).
+:- initialization(definez_comme_sortir(mentir, 'to lie (speak untruth)')).
 :- initialization(definez_comme_sortir(partir, 'to leave (a place)')).
 :- initialization(definez_comme_sortir(sentir, 'to smell')).
 :- initialization(definez_comme_sortir(servir, 'to serve')).
 
 % L'imparfait
 
-%% conj_limparfait(Conj, [étais, étais, était, étions, étiez, étaient]) :-
-%%     nth(4, Conj, sommes),
-%%     !.
+conj_imparfait(être, [étais, étais, était, étions, étiez, étaient]) :- !.
 
-%% conj_limparfait(Conj, [mangeais, mangeais, mangeait,
-%%                        mangions, mangiez, mangeaient]) :-
-%%     nth(4, Conj, mangeons),
-%%     !.
+conj_imparfait(manger, [mangeais, mangeais, mangeait,
+                         mangions, mangiez, mangeaient]) :- !.
 
-%% conj_limparfait(Conj, [commençais, commençais, commençait,
-%%                        commencions, commenciez, commençaient]) :-
-%%     nth(4, Conj, commençons),
-%%     !.
+conj_imparfait(commencer, [commençais, commençais, commençait,
+                            commencions, commenciez, commençaient]) :- !.
 
-%% conj_limparfait(Conj, [Fst, Snd, Thd, FstPl, SndPl, ThdPl]) :-
-%%     nth(4, Conj, Nous),
-%%     atom_concat(Root, 'ons', Nous),
-%%     atom_concat(Root, 'ais', Fst),
-%%     atom_concat(Root, 'ais', Snd),
-%%     atom_concat(Root, 'ait', Thd),
-%%     atom_concat(Root, 'ions', FstPl),
-%%     atom_concat(Root, 'iez', SndPl),
-%%     atom_concat(Root, 'aient', ThdPl).
+conj_imparfait(Infinitif, [Fst, Snd, Thd, FstPl, SndPl, ThdPl]) :-
+    conj_présent(Infinitif, [_, _, _, Nous|_]),
+    atom_concat(Root, 'ons', Nous),
+    atom_concat(Root, 'ais', Fst),
+    atom_concat(Root, 'ais', Snd),
+    atom_concat(Root, 'ait', Thd),
+    atom_concat(Root, 'ions', FstPl),
+    atom_concat(Root, 'iez', SndPl),
+    atom_concat(Root, 'aient', ThdPl).
 
-%% append_limparfait([]).
-%% append_limparfait([verbe(Inf, Ang, Conj0)|L]) :-
-%%     conj_limparfait(Conj0, Limp),
-%%     retractall(mot(verbe(Inf, Ang, Conj))),
-%%     append(Conj0, Limp, Conj),
-%%     assertz(mot(verbe(Inf, Ang, Conj))),
-%%     append_limparfait(L).
-%% append_limparfait :-
-%%     findall(Inf, mot(verbe(Inf, _, _)), L),
-%%     append_limparfait(L).
-
-%% :- initialization(append_limparfait).

@@ -163,7 +163,7 @@ quiz_mot(verbe(Infinitif, Anglais), Conjer, StatsIn, StatsOut) :-
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 
-quiz_mot(phrase(Francais, Anglais), StatsIn, StatsOut) :-
+quiz_mot(phrase(Francais, Anglais), _, StatsIn, StatsOut) :-
     write_anglais(Anglais), nl,
     quiz_question('? ', Francais, StatsIn, StatsOut).
 

@@ -167,7 +167,7 @@ i_conj_présent(essayer, [essayie, essayies, essayie, essayons, essayez, essaien
 
 mot(verbe(acheter, 'to buy')).
 i_conj_présent(acheter, [achète, achètes, achète, achetons, achetez, achètent]).
-i_passé_composé(acheter, _, achété). %TODO: lookup
+i_passé_composé(acheter, _, acheté). %TODO: lookup
 
 %
 

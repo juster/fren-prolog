@@ -1,7 +1,8 @@
 %%:- use_module(library(readutil)).
-:- dynamic(mot/1, i_passé_composé/3, i_conj_présent/2).
-:- discontiguous(mot/1, i_passé_composé/3, i_conj_présent/2,
-                 conj_présent_régulier/2).
+:- dynamic(mot/2, conj_présent/2,
+           passé_composé_aux/2, passé_composé_part/2).
+:- discontiguous(mot/2, chapitre/2, conj_présent/2,
+                 passé_composé_aux/2, passé_composé_part/2).
 
 %% verb_mot(X) :-
 %%     mot(X), functor(X, verb, _).
@@ -11,72 +12,23 @@
 %%     conj_présent_régulier_re(Infinitif, Conjugates);
 %%     conj_présent_régulier_ir(Infinitif, Conjugates).
 
-définez_mot(Mot) :- retractall(mot(Mot)), assertz(mot(Mot)).
+définez_mot(Mot, Ang) :- retractall(mot(Mot, _)), assertz(mot(Mot, Ang)).
 
-définez_régulier(Infinitif, Anglais) :-
-    conj_présent_régulier(Infinitif, Conjugates),
-    définez_mot(verbe(Infinitif, Anglais, Conjugates)).
-
-passé_composé_participle(Infinitif, PasséPart) :-
-    atom_concat(Root, 'er', Infinitif),
-    atom_concat(Root, 'é', PasséPart).
-
-passé_composé_participle(Infinitif, PassePart) :-
-    atom_concat(Root, 'ir', Infinitif),
-    atom_concat(Root, 'u', PassePart).
-
-passé_composé_participle(Infinitif, PassePart) :-
-    atom_concat(Root, 're', Infinitif),
-    atom_concat(Root, 'u', PassePart).
-
-conj_présent(Infinitif, Conj) :-
-    i_conj_présent(Infinitif, Conj),
-    !.
-conj_présent(Infinitif, Conj) :-
-    conj_présent_régulier(Infinitif, Conj).
-
-%% Revert to the defaults if no passe-compose aux/past participle
-%% is defined as an irregular case.
-
-% passé_composé defines both an auxilliary and a participle
-passé_composé(Infinitif, Aux, PassePart) :-
-    i_passé_composé(Infinitif, Aux, PassePart),
-    nonvar(Aux),
-    nonvar(PassePart).
-
-% passé_composé defines only an irregular participle
-passé_composé(Infinitif, avoir, PassePart) :-
-    i_passé_composé(Infinitif, avoir, PassePart),
-    nonvar(PassePart).
-
-% passé_composé defines only an irregular auxilliary
-passé_composé(Infinitif, Aux, PassePart) :-
-    i_passé_composé(Infinitif, Aux, Var),
-    nonvar(Aux), var(Var),
-    passé_composé_participle(Infinitif, PassePart).
-
-% passé_composé is not defined for the infinitive.
-passé_composé(Infinitif, avoir, PassePart) :-
-    \+ i_passé_composé(Infinitif, _, _),
-    passé_composé_participle(Infinitif, PassePart).
+mot(pronom(je), 'I').
+mot(pronom(tu), 'you').
+mot(pronom(il), 'he/it').
+mot(pronom(elle), 'she').
+mot(pronom(nous), 'we').
+mot(pronom(vous), 'you (fl)').
+mot(pronom(ils), 'you (pl)').
 
 % Chapitre 1
-mot(verbe(être, 'to be')).
-i_conj_présent(être, [suis, es, est, sommes, êtes, sont]).
-i_passé_composé(être, _, 'été').
+chapitre(1, [verbe(être)]).
+mot(verbe(être), 'to be').
+conj_présent(être, [suis, es, est, sommes, êtes, sont]).
+passé_composé_part(être, 'été').
 
 % Chapitre 2, Page 47
-
-conj_présent_régulier(Infinitif,
-                      [First, Second, Third,
-                       FirstPl, SecondPl, ThirdPl]) :-
-    atom_concat(Root, 'er', Infinitif),
-    atom_concat(Root, 'e', First),
-    atom_concat(Root, 'es', Second),
-    First = Third,
-    atom_concat(Root, 'ons', FirstPl),
-    atom_concat(Root, 'ez', SecondPl),
-    atom_concat(Root, 'ent', ThirdPl).
 
 %verbe('aimer mieux', 'to prefer').
 %% :- initialization('définez_régulier'(chercher, 'to look for', avoir-cherché)).
@@ -98,103 +50,116 @@ conj_présent_régulier(Infinitif,
 %% :- initialization('définez_régulier'(adorer, 'to adore'), avoir-adoré).
 
 % Chapitre 3 Page 63
-mot(verbe(aller, 'to go')).
-i_conj_présent(aller, [vais, vas, va, allons, allez, vont]).
-i_passé_composé(aller, être, allé).
+chapitre(3, [verbe(aller), verbe(venir), verbe(devenir), verbe(revenir)]).
+mot(verbe(aller), 'to go').
+conj_présent(aller, [vais, vas, va, allons, allez, vont]).
+passé_composé_aux(aller, être).
+passé_composé_part(aller, allé).
 
-mot(verbe(venir, 'to come')).
-i_conj_présent(venir, [viens, viens, vient, venons, venez, viennent]).
-i_passé_composé(venir, être, _).
-
-mot(verbe(devenir, 'to become')).
-i_conj_présent(devenir, [deviens, deviens, devient, devenons, devenez, deviennent]).
-i_passé_composé(devenir, être, _).
-
-mot(verbe(revenir, 'to come back')).
-i_conj_présent(revenir, [reviens, reviens, revient,
-                       revenons, revenez, reviennent]).
-i_passé_composé(revenir, être, _).
+mot(verbe(venir), 'to come').
+mot(verbe(devenir), 'to become').
+mot(verbe(revenir), 'to come back').
 
 % Chapitre 4
-mot(verbe(avoir, 'to have')).
-i_conj_présent(avoir, [ai, as, a, avons, avez, ont]).
-i_passé_composé(avoir, _, eu).
+chapitre(4, [verbe(avoir), verbe(faire)]).
+mot(verbe(avoir), 'to have').
+conj_présent(avoir, [ai, as, a, avons, avez, ont]) :- !.
+passé_composé_part(avoir, eu).
 
-mot(verbe(faire, 'to do; to make')).
-i_conj_présent(faire, [fais, fais, fait, faisons, faites, font]).
-i_passé_composé(faire, _, fait).
+mot(verbe(faire), 'to do; to make').
+conj_présent(faire, [fais, fais, fait, faisons, faites, font]) :- !.
+passé_composé_part(faire, fait).
+
+subject(X) :- mot(pronom(X, _)).
+
+verbe_conjugate(je, Inf) --> {conj_présent(Inf, L), nth(1, L, X)}, [X].
+verbe_conjugate(tu, Inf) --> {conj_présent(Inf, L), nth(2, L, X)}, [X].
+verbe_conjugate(il, Inf) --> {conj_présent(Inf, L), nth(3, L, X)}, [X].
+verbe_conjugate(elle, Inf) --> {conj_présent(Inf, L), nth(3, L, X)}, [X].
+verbe_conjugate(nous, Inf) --> {conj_présent(Inf, L), nth(4, L, X)}, [X].
+verbe_conjugate(vous, Inf) --> {conj_présent(Inf, L), nth(5, L, X)}, [X].
+verbe_conjugate(ils, Inf) --> {conj_présent(Inf, L), nth(6, L, X)}, [X].
+%% verbe_conjugates(S, Inf) --> {singular(S), conj_présent(Inf, L), nth(3, L, X)}
+%% verbe_conjugates(S, Inf) --> {plural(S), conj_présent(Inf, L), nth(6, L, X)}
+
+avoir_expression(Subj, Adj) -->
+    {subject(Subj)}, [Subj], verbe_conjugate(Subj, avoir), Adj.
+
+chapitre(4, [expression('to be hot'), expression('to be cold'),
+             expression('to be hungry'), expression('to be thirst'),
+             expression('to be afraid'), expression('to be in need'),
+             expression('to have desire'), expression('to have the air of'),
+             expression('to be ashamed of')]).
+
+expression('to be hot', Subj) --> avoir_expression(Subj, [chaud]).
+expression('to be cold', Subj) --> avoir_expression(Subj, [froid]).
+expression('to be hungry', Subj) --> avoir_expression(Subj, [faim]).
+expression('to be thirsty', Subj) --> avoir_expression(Subj, [soif]).
+expression('to be ashamed of', Subj) --> avoir_expression(Subj, [honte,de]).
+expression('to be afraid', Subj) --> avoir_expression(Subj, [peur]).
+expression('to be in need', Subj) --> avoir_expression(Subj, [besoin]).
+expression('to have desire', Subj) --> avoir_expression(Subj, [envie]).
+expression('to have the air of', Subj) --> avoir_expression(Subj, [le,air]).
 
 % Chapitre 6, Page 123.
-mot(verbe(pouvoir, 'to be able')).
-i_conj_présent(pouvoir, [peux, peux, peut, pouvons, pouvez, peuvent]).
-i_passé_composé(pouvoir, _, pu).
+chapitre(6, [verbe(pouvoir), verbe(vouloir), verbe(commencer), verbe(manger),
+             verbe(préférér), verbe(espérer), verbe(répéter), verbe(payer),
+             verbe(employer), verbe(envoyer), verbe(essayer), verbe(acheter)]).
 
-mot(verbe(vouloir, 'to want')).
-i_conj_présent(vouloir, [veux, veux, veut, voulons, voulez, veulent]).
-i_passé_composé(vouloir, _, voulu).
+mot(verbe(pouvoir), 'to be able').
+conj_présent(pouvoir, [peux, peux, peut, pouvons, pouvez, peuvent]).
+passé_composé_part(pouvoir, pu).
+
+mot(verbe(vouloir), 'to want').
+conj_présent(vouloir, [veux, veux, veut, voulons, voulez, veulent]).
+passé_composé_part(vouloir, voulu).
 
 % Chapitre 6, Page 126
 % Irregular verbs
 
-mot(verbe(commencer, 'to begin')).
-i_conj_présent(commencer, [commence, commences, commence,
+mot(verbe(commencer), 'to begin').
+conj_présent(commencer, [commence, commences, commence,
                          commençons, commencez, commencent]).
 
-mot(verbe(manger, 'to eat')).
-i_conj_présent(manger, [mange, manges, mange, mangeons, mangez, mangent]).
+mot(verbe(manger), 'to eat').
+conj_présent(manger, [mange, manges, mange,
+                      mangeons, mangez, mangent]).
 
-mot(verbe(préférer, 'to prefer')).
-i_conj_présent(préférer, [préfère, préfères, préfère,
+mot(verbe(préférer), 'to prefer').
+conj_présent(préférer, [préfère, préfères, préfère,
                         préférons, préférez, préfèrent]).
 
-mot(verbe(espérer, 'to hope')).
-i_conj_présent(espérer, [espère, espères, espère, espérons, espérez, espèrent]).
+mot(verbe(espérer), 'to hope').
+conj_présent(espérer, [espère, espères, espère,
+                       espérons, espérez, espèrent]).
 
-mot(verbe(répéter, 'to repeat')).
-i_conj_présent(répéter, [répète, répètes, répète, répétons, répétez, répètent]).
+mot(verbe(répéter), 'to repeat').
+conj_présent(répéter, [répète, répètes, répète,
+                       répétons, répétez, répètent]).
 
-mot(verbe(payer, 'to pay')).
-i_conj_présent(payer, [paie, paies, paie, payons, payez, paient]).
-
-mot(verbe(employer, 'to employ')).
-i_conj_présent(employer, [employie, employies, employie, employons, employez, emploient]).
-
-mot(verbe(envoyer, 'to send')).
-i_conj_présent(envoyer, [envoyie, envoyies, envoyie, envoyons, envoyez, envoient]).
-
-mot(verbe(essayer, 'to try (on)')).
-i_conj_présent(essayer, [essayie, essayies, essayie, essayons, essayez, essaient]).
-
-mot(verbe(acheter, 'to buy')).
-i_conj_présent(acheter, [achète, achètes, achète, achetons, achetez, achètent]).
-i_passé_composé(acheter, _, acheté). %TODO: lookup
+mot(verbe(payer), 'to pay').
+mot(verbe(employer), 'to employ').
+mot(verbe(envoyer), 'to send').
+mot(verbe(essayer), 'to try (on)').
+mot(verbe(acheter), 'to buy').
+conj_présent(acheter, [achète, achètes, achète,
+                       achetons, achetez, achètent]).
 
 %
 
-mot(verbe(mettre, 'to put')).
-i_conj_présent(mettre, [mets, mets, met, mettons, mettez, mettent]).
-i_passé_composé(mettre, _, mis).
+mot(verbe(mettre), 'to put').
+conj_présent(mettre, [mets, mets, met, mettons, mettez, mettent]).
+passé_composé_part(mettre, mis).
 
-mot(verbe(devoir, 'to owe')).
-i_conj_présent(devoir, [dois, dois, doit, devons, devez, doivent]).
-i_passé_composé(devoir, _, dû).
-          
+mot(verbe(devoir), 'to owe').
+conj_présent(devoir, [dois, dois, doit, devons, devez, doivent]).
+passé_composé_part(devoir, dû).
+
 mot(verbe(boire, 'to drink')).
-i_conj_présent(boire, [bois, bois, boit, buvons, buvez, boivent]).
-i_passé_composé(boire, _, bu).
+conj_présent(boire, [bois, bois, boit, buvons, buvez, boivent]).
+passé_composé_part(boire, bu).
 
 % Chapitre 8 - Page 163
-
-conj_présent_régulier(Infinitif, 
-                      [First, Second, Third,
-                       Firsts, SecondFormal, Thirds]) :- 
-    atom_concat(Root, 're', Infinitif),
-    atom_concat(Root, 's', First),
-    atom_concat(Root, 's', Second),
-    Root = Third,
-    atom_concat(Root, 'ons', Firsts),
-    atom_concat(Root, 'ez', SecondFormal),
-    atom_concat(Root, 'ent', Thirds).
 
 %% :- initialization('définez_régulier'('répondre', 'to answer', avoir-répondu)).
 %% :- initialization('définez_régulier'(attendre, 'to wait for', avoir-attendu)).
@@ -206,17 +171,6 @@ conj_présent_régulier(Infinitif,
 %% :- initialization('définez_régulier'(vendre, 'to sell', avoir-vendu)).
 
 % Chapitre 11 - Page 226
-
-conj_présent_régulier(Infinitif,
-                      [First, Second, Third,
-                       Firsts, Seconds, Thirds]) :- 
-    atom_concat(Root, 'ir', Infinitif),
-    atom_concat(Root, 'is', First),
-    atom_concat(Root, 'it', Second),
-    Root = Third,
-    atom_concat(Root, 'issons', Firsts),
-    atom_concat(Root, 'issez', Seconds),
-    atom_concat(Root, 'issent', Thirds).
 
 %% :- initialization('définez_régulier'(finir, 'to finish')).
 %% :- initialization('définez_régulier'(applaudir, 'to applaud')).
@@ -239,33 +193,23 @@ conj_présent_régulier(Infinitif,
 %% mot(phrase('combien de', 'how many (of)...')).
 %% mot(phrase('quel', 'which (m)')).
 %% mot(phrase('quelle', 'which (f)')).
-%%mot(phrase('qu''est-ce que', 'what is it that...')).
+%% mot(phrase('qu''est-ce que', 'what is it that...')).
 
-mot(phrase('avoir chaud', 'to be hot')).
-mot(phrase('avoir froid', 'to be cold')).
-mot(phrase('avoir faim', 'to be hungry')).
-mot(phrase('avoir soif', 'to be thirsty')).
-mot(phrase('avoir honte de', 'to be ashamed of')).
-mot(phrase('avoir peur', 'to be afraid')).
-mot(phrase('avoir besoin', 'to be in need')).
-mot(phrase('avoir envie', 'to have desire')).
-mot(phrase('avoir l''air', 'to have the air of')).
+%% mot(phrase('avoir chaud', 'to be hot')).
+%% mot(phrase('avoir froid', 'to be cold')).
+%% mot(phrase('avoir faim', 'to be hungry')).
+%% mot(phrase('avoir soif', 'to be thirsty')).
+%% mot(phrase('avoir honte de', 'to be ashamed of')).
+%% mot(phrase('avoir peur', 'to be afraid')).
+%% mot(phrase('avoir besoin', 'to be in need')).
+%% mot(phrase('avoir envie', 'to have desire')).
+%% mot(phrase('avoir l''air', 'to have the air of')).
 
 %% Pronominal verbs
 
 définez_régulier_pronominal(Infinitif, Anglais) :-
-    %% conj_présent_régulier(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]),
-    %% atom_concat('se ', Infinitif0, Infinitif),
-    %% atom_concat('me ', Je0, Je),
-    %% atom_concat('te ', Tu0, Tu),
-    %% atom_concat('se ', Il0, Il),
-    %% atom_concat('nous ', Nous0, Nous),
-    %% atom_concat('vous ', Vous0, Vous),
-    %% atom_concat('se ', Ils0, Ils),
-    définez_mot(verbe_pronominal(Infinitif, Anglais)),
-    retractall(i_passé_composé(Infinitif, _, _)),
-    assertz(i_passé_composé(Infinitif, être, _)).
-    %[Je, Tu, Il, Nous, Vous, Ils])).
+    définez_mot(verbe_pronominal(Infinitif), Anglais),
+    assertz(passé_composé_aux(Infinitif, être)).
 
 :- initialization(définez_régulier_pronominal(réveiller, 'to wake up')).
 :- initialization(définez_régulier_pronominal(lever, 'to get up')).
@@ -284,56 +228,146 @@ définez_régulier_pronominal(Infinitif, Anglais) :-
 
 %% Quelques verbes comme sortir p169
 
-conj_présent_comme_sortir(Infinitif,
-                          [First, Second, Third,
-                           FirstPl, SecondPl, ThirdPl]) :- 
+mot(verbe(sortir), 'to go out').
+mot(verbe(dormir), 'to sleep').
+mot(verbe(mentir), 'to lie (speak untruth)').
+mot(verbe(partir), 'to leave (a place)').
+mot(verbe(sentir), 'to smell').
+mot(verbe(servir), 'to serve').
+
+%% définez_régulier(Infinitif, Anglais) :-
+%%     conj_présent_régulier(Infinitif, Conjugates),
+%%     définez_mot(verbe(Infinitif, Anglais, Conjugates)).
+
+passé_composé_aux(_, avoir).
+
+passé_composé_part(Infinitif, PassePart) :-
+    atom_concat(Root, 'er', Infinitif),
+    atom_concat(Root, 'é', PassePart).
+
+passé_composé_part(Infinitif, PassePart) :-
+    atom_concat(Root, 'ir', Infinitif),
+    atom_concat(Root, 'u', PassePart).
+
+passé_composé_part(Infinitif, PassePart) :-
+    atom_concat(Root, 're', Infinitif),
+    atom_concat(Root, 'u', PassePart).
+
+passé_composé(Infinitif, Aux, Part) :-
+    passé_composé_aux(Infinitif, Aux),
+    passé_composé_part(Infinitif, Part).
+
+
+% Chapitre 13
+
+chapitre(13, [verbe(savoir), verbe(connaître)]).
+mot(verbe(savoir), 'to know').
+mot(verbe(connaître), 'to be acquainted with').
+conj_présent(savoir, [sais, sais, sait, savons, savez, savent]).
+conj_présent(connaître, [connais, connais, connait, connaissons, connaissez, conaissent]).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Regular verb conjugations go at the end.
+
+% like payer
+conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]) :- 
+    atom_concat(Root, 'yer', Infinitif),
+    atom_concat(Root, 'ie', Je),
+    atom_concat(Root, 'ies', Tu),
+    atom_concat(Root, 'ie', Il),
+    atom_concat(Root, 'yons', Nous),
+    atom_concat(Root, 'yez', Vous),
+    atom_concat(Root, 'ient', Ils).
+
+% like venir
+conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]) :-
+    memberchk(Infinitif, [venir, revenir, devenir]),
+    atom_concat(Root, 'enir', Infinitif),
+    atom_concat(Root, 'iens', Je),
+    atom_concat(Root, 'iens', Tu),
+    atom_concat(Root, 'ient', Il),
+    atom_concat(Root, 'enons', Nous),
+    atom_concat(Root, 'enez', Vous),
+    atom_concat(Root, 'iennent', Ils).
+
+passé_composé_aux(Infinitif, être) :-
+    memberchk(Infinitif, [venir, revenir, devenir]).
+
+conj_présent(Infinitif,
+             [Je, Tu, Il,
+              Nous, Vous, Ils]) :- 
+    memberchk(Infinitif, [sortir, dormir, mentir,
+                          partir, sentir, servir]),
     atom_chars(Infinitif, InfChars),
     append(RootChars, [X,'i','r'], InfChars),
     atom_chars(Root, RootChars),
-    atom_concat(Root, 's', First),
-    atom_concat(Root, 's', Second),
-    atom_concat(Root, 't', Third),
-    append(RootChars, [X,'o','n','s'], FirstPlChars),
-    atom_chars(FirstPl, FirstPlChars),
-    append(RootChars, [X,'e','z'], SecondPlChars),
-    atom_chars(SecondPl, SecondPlChars),
-    append(RootChars, [X,'e','n','t'], ThirdPlChars),
-    atom_chars(ThirdPl, ThirdPlChars).
+    atom_concat(Root, 's', Je),
+    atom_concat(Root, 's', Tu),
+    atom_concat(Root, 't', Il),
+    append(RootChars, [X,'o','n','s'], NousChars),
+    atom_chars(Nous, NousChars),
+    append(RootChars, [X,'e','z'], VousChars),
+    atom_chars(Vous, VousChars),
+    append(RootChars, [X,'e','n','t'], IlsChars),
+    atom_chars(Ils, IlsChars).
 
-passé_participe_comme_sortir(Infinitif, PassePart) :-
+passé_composé_part(Infinitif, PassePart) :-
+    memberchk(Infinitif, [sortir, dormir, mentir,
+                          partir, sentir, servir]),
     atom_chars(Infinitif, InfChars),
     append(RootChars, [X,'i','r'], InfChars),
     append(RootChars, [X,'i'], PasseChars),
     atom_chars(PassePart, PasseChars).
 
-definez_comme_sortir(Infinitif, Anglais) :-
-    conj_présent_comme_sortir(Infinitif, Conj),
-    passé_participe_comme_sortir(Infinitif, PassePart),
-    définez_mot(verbe(Infinitif, Anglais)),
-    retractall(i_conj_présent(Infinitif, _)),
-    assertz(i_conj_présent(Infinitif, Conj)),
-    retractall(i_passé_composé(Infinitif, _, _)),
-    assertz(i_passé_composé(Infinitif, être, PassePart)).
+% régulier -er
+conj_présent(Infinitif,
+             [First, Second, Third,
+              FirstPl, SecondPl, ThirdPl]) :-
+    atom_concat(Root, 'er', Infinitif),
+    atom_concat(Root, 'e', First),
+    atom_concat(Root, 'es', Second),
+    First = Third,
+    atom_concat(Root, 'ons', FirstPl),
+    atom_concat(Root, 'ez', SecondPl),
+    atom_concat(Root, 'ent', ThirdPl).
 
-:- initialization(definez_comme_sortir(sortir, 'to go out')).
-:- initialization(definez_comme_sortir(dormir, 'to sleep')).
-:- initialization(definez_comme_sortir(mentir, 'to lie (speak untruth)')).
-:- initialization(definez_comme_sortir(partir, 'to leave (a place)')).
-:- initialization(definez_comme_sortir(sentir, 'to smell')).
-:- initialization(definez_comme_sortir(servir, 'to serve')).
+% régulier -ir
+conj_présent(Infinitif,
+             [First, Second, Third,
+              Firsts, Seconds, Thirds]) :- 
+    atom_concat(Root, 'ir', Infinitif),
+    atom_concat(Root, 'is', First),
+    atom_concat(Root, 'it', Second),
+    Root = Third,
+    atom_concat(Root, 'issons', Firsts),
+    atom_concat(Root, 'issez', Seconds),
+    atom_concat(Root, 'issent', Thirds).
+
+% régulier -re
+conj_présent(Infinitif, 
+             [First, Second, Third,
+              Firsts, SecondFormal, Thirds]) :- 
+    atom_concat(Root, 're', Infinitif),
+    atom_concat(Root, 's', First),
+    atom_concat(Root, 's', Second),
+    Root = Third,
+    atom_concat(Root, 'ons', Firsts),
+    atom_concat(Root, 'ez', SecondFormal),
+    atom_concat(Root, 'ent', Thirds).
 
 % L'imparfait
 
-conj_imparfait(être, [étais, étais, était, étions, étiez, étaient]) :- !.
+conj_imparfait(être, [étais, étais, était, étions, étiez, étaient]).
 
 conj_imparfait(manger, [mangeais, mangeais, mangeait,
-                         mangions, mangiez, mangeaient]) :- !.
+                         mangions, mangiez, mangeaient]).
 
 conj_imparfait(commencer, [commençais, commençais, commençait,
-                            commencions, commenciez, commençaient]) :- !.
+                            commencions, commenciez, commençaient]).
 
 conj_imparfait(Infinitif, [Fst, Snd, Thd, FstPl, SndPl, ThdPl]) :-
-    conj_présent(Infinitif, [_, _, _, Nous|_]),
+    conj_présent(Infinitif, Conj),
+    nth(4, Conj, Nous),
     atom_concat(Root, 'ons', Nous),
     atom_concat(Root, 'ais', Fst),
     atom_concat(Root, 'ais', Snd),
@@ -341,4 +375,3 @@ conj_imparfait(Infinitif, [Fst, Snd, Thd, FstPl, SndPl, ThdPl]) :-
     atom_concat(Root, 'ions', FstPl),
     atom_concat(Root, 'iez', SndPl),
     atom_concat(Root, 'aient', ThdPl).
-

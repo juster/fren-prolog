@@ -23,7 +23,7 @@ quiz(Mots, ConjTerm) :-
     !.
 
 quiz_all :-
-    findall(X, mot(X), Mots0),
+    findall(X-Ang, mot(X, Ang), Mots0),
     permute_list(Mots0, Mots),
     quiz(Mots, conj_présent).
 
@@ -149,7 +149,7 @@ verbe_pronominal_questionnes(Infinitif, Conjer,
     atom_concat(Tmp1, ' ', Tmp2),
     atom_concat(Tmp2, PassePart, PasseComp).
 
-quiz_mot(verbe_pronominal(Infinitif, Anglais),
+quiz_mot(verbe_pronominal(Infinitif)-Anglais,
          Conjer,
          StatsIn, StatsOut) :-
     !,
@@ -157,20 +157,20 @@ quiz_mot(verbe_pronominal(Infinitif, Anglais),
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 
-quiz_mot(verbe(Infinitif, Anglais), Conjer, StatsIn, StatsOut) :-
+quiz_mot(verbe(Infinitif)-Anglais, Conjer, StatsIn, StatsOut) :-
     !,
     verbe_questionnes(Infinitif, Conjer, QAs),
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 
-quiz_mot(phrase(Francais, Anglais), _, StatsIn, StatsOut) :-
-    write_anglais(Anglais), nl,
-    quiz_question('? ', Francais, StatsIn, StatsOut).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 quiz_imparfait :-
-    findall(verbe(Inf, Ang), mot(verbe(Inf, Ang)), L0),
+    findall(verbe(Inf)-Ang, mot(verbe(Inf), Ang), L0),
     %findall(verbe_pronominal(Inf, Ang), mot(verbe_pronominal(Inf, Ang)), L1),
     %append(L0, L1, L),
     permute_list(L0, Lr),

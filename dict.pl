@@ -29,25 +29,29 @@ conj_présent(être, [suis, es, est, sommes, êtes, sont]).
 passé_composé_part(être, 'été').
 
 % Chapitre 2, Page 47
+chapitre(2, [verbe(chercher), verbe(aimer), verbe(diner), verbe(donner),
+             verbe(écouter), verbe(étudier), verbe(habiter), verbe(parler),
+             %expression('to think that'), expression('to think about'),
+             %expression('to have an opinion'),
+             verbe(penser), verbe(porter), verbe(regarder), verbe(travailler),
+             verbe(trouver), verbe(adorer)]).
 
-%verbe('aimer mieux', 'to prefer').
-%% :- initialization('définez_régulier'(chercher, 'to look for', avoir-cherché)).
-%% :- initialization('définez_régulier'(aimer, 'to like'), avoir-aimé).
-%% :- initialization('définez_régulier'(diner, 'to dine'), avoir-diné).
-%% :- initialization('définez_régulier'(donner, 'to give'), avoir-donné).
-%% :- initialization('définez_régulier'('écouter', 'to listen (to)'), avoir-écouté).
-%% :- initialization('définez_régulier'('étudier', 'to study'), avoir-étudié).
-%% :- initialization('définez_régulier'(habiter, 'to reside, to habitate'), avoir-habité).
-%% :- initialization('définez_régulier'(parler, 'to speak'), avoir-parlé).
-% penser que = to think that
-% penser a = to think about
-% penser de = to have an opinion about
-%% :- initialization('définez_régulier'(penser, 'to think'), avoir-pensé).
-%% :- initialization('définez_régulier'(porter, 'to wear'), avoir-porté).
-%% :- initialization('définez_régulier'(regarder, 'to watch'), avoir-regardé).
-%% :- initialization('définez_régulier'(travailler, 'to work'), avoir-travaillé).
-%% :- initialization('définez_régulier'(trouver, 'to find'), avoir-trouvé).
-%% :- initialization('définez_régulier'(adorer, 'to adore'), avoir-adoré).
+mot(verbe(chercher), 'to look for').
+mot(verbe(aimer), 'to like').
+mot(verbe(diner), 'to dine').
+mot(verbe(écouter), 'to listen (to)').
+mot(verbe(étudier), 'to study').
+mot(verbe(habiter), 'to reside, to habitate').
+mot(verbe(parler), 'to speak').
+mot(verbe(penser), 'to think').
+mot(verbe(porter), 'to wear').
+mot(verbe(regarder), 'to watch').
+mot(verbe(travailler), 'to work').
+mot(verbe(trouver), 'to find').
+mot(verbe(adorer), 'to adore').
+
+%%think_about(Object) :- 
+%%expression('to think that', object(Object)) --> verbe(penser), {think_about(Object)}.
 
 % Chapitre 3 Page 63
 chapitre(3, [verbe(aller), verbe(venir), verbe(devenir), verbe(revenir)]).
@@ -70,36 +74,39 @@ mot(verbe(faire), 'to do; to make').
 conj_présent(faire, [fais, fais, fait, faisons, faites, font]) :- !.
 passé_composé_part(faire, fait).
 
-subject(X) :- mot(pronom(X, _)).
+subject(X) :- mot(pronom(X), _).
 
-verbe_conjugate(je, Inf) --> {conj_présent(Inf, L), nth(1, L, X)}, [X].
-verbe_conjugate(tu, Inf) --> {conj_présent(Inf, L), nth(2, L, X)}, [X].
-verbe_conjugate(il, Inf) --> {conj_présent(Inf, L), nth(3, L, X)}, [X].
-verbe_conjugate(elle, Inf) --> {conj_présent(Inf, L), nth(3, L, X)}, [X].
-verbe_conjugate(nous, Inf) --> {conj_présent(Inf, L), nth(4, L, X)}, [X].
-verbe_conjugate(vous, Inf) --> {conj_présent(Inf, L), nth(5, L, X)}, [X].
-verbe_conjugate(ils, Inf) --> {conj_présent(Inf, L), nth(6, L, X)}, [X].
-%% verbe_conjugates(S, Inf) --> {singular(S), conj_présent(Inf, L), nth(3, L, X)}
-%% verbe_conjugates(S, Inf) --> {plural(S), conj_présent(Inf, L), nth(6, L, X)}
+subject_verbe(je, L, X) :- nth(1, L, X).
+subject_verbe(tu, L, X) :- nth(2, L, X).
+subject_verbe(il, L, X) :- nth(3, L, X).
+subject_verbe(elle, L, X) :- nth(3, L, X).
+subject_verbe(nous, L, X) :- nth(4, L, X).
+subject_verbe(vous, L, X) :- nth(5, L, X).
+subject_verbe(ils, L, X) :- nth(6, L, X).
+%% subject_verbes(S, Inf) --> {singular(S), conj_présent(Inf, L), nth(3, L, X)}
+%% subject_verbes(S, Inf) --> {plural(S), conj_présent(Inf, L), nth(6, L, X)}
 
-avoir_expression(Subj, Adj) -->
-    {subject(Subj)}, [Subj], verbe_conjugate(Subj, avoir), Adj.
+verbe_conjugate(Subj, Inf, Conjer) -->
+    {Conj =.. [Conjer, Inf, L], call(Conj), subject_verbe(Subj, L, V)}, [V].
+
+avoir_expression(Subj, Conjer, Adj) -->
+    {subject(Subj)}, [Subj], verbe_conjugate(Subj, avoir, Conjer), Adj.
 
 chapitre(4, [expression('to be hot'), expression('to be cold'),
-             expression('to be hungry'), expression('to be thirst'),
+             expression('to be hungry'), expression('to be thirsty'),
              expression('to be afraid'), expression('to be in need'),
              expression('to have desire'), expression('to have the air of'),
              expression('to be ashamed of')]).
 
-expression('to be hot', Subj) --> avoir_expression(Subj, [chaud]).
-expression('to be cold', Subj) --> avoir_expression(Subj, [froid]).
-expression('to be hungry', Subj) --> avoir_expression(Subj, [faim]).
-expression('to be thirsty', Subj) --> avoir_expression(Subj, [soif]).
-expression('to be ashamed of', Subj) --> avoir_expression(Subj, [honte,de]).
-expression('to be afraid', Subj) --> avoir_expression(Subj, [peur]).
-expression('to be in need', Subj) --> avoir_expression(Subj, [besoin]).
-expression('to have desire', Subj) --> avoir_expression(Subj, [envie]).
-expression('to have the air of', Subj) --> avoir_expression(Subj, [le,air]).
+expression('to be hot', Subj, Conjer) --> avoir_expression(Subj, Conjer, [chaud]).
+expression('to be cold', Subj, Conjer) --> avoir_expression(Subj, Conjer, [froid]).
+expression('to be hungry', Subj, Conjer) --> avoir_expression(Subj, Conjer, [faim]).
+expression('to be thirsty', Subj, Conjer) --> avoir_expression(Subj, Conjer, [soif]).
+expression('to be ashamed of', Subj, Conjer) --> avoir_expression(Subj, Conjer, [honte,de]).
+expression('to be afraid', Subj, Conjer) --> avoir_expression(Subj, Conjer, [peur]).
+expression('to be in need', Subj, Conjer) --> avoir_expression(Subj, Conjer, [besoin]).
+expression('to have desire', Subj, Conjer) --> avoir_expression(Subj, Conjer, [envie]).
+expression('to have the air of', Subj, Conjer) --> avoir_expression(Subj, Conjer, [le, air]).
 
 % Chapitre 6, Page 123.
 chapitre(6, [verbe(pouvoir), verbe(vouloir), verbe(commencer), verbe(manger),
@@ -147,9 +154,31 @@ conj_présent(acheter, [achète, achètes, achète,
 
 %
 
+chapitre(7, [verbe(prendre), verbe(apprendre), verbe(comprendre),
+             verbe(mettre), verbe(permettre), verbe(devoir), verbe(boir)]).
+
+mot(verbe(prendre), 'to take').
+conj_présent(prendre, [prends, prends, prend, prenons, prenez, prennent]).
+passé_composé_part(prendre, pris).
+
+mot(verbe(apprendre), 'to take').
+conj_présent(apprendre, [apprends, apprends, apprend,
+                         apprenons, apprenez, apprennent]).
+passé_composé_part(apprendre, appris).
+
+mot(verbe(comprendre), 'to take').
+conj_présent(comprendre, [comprends, comprends, comprend,
+                         comprenons, comprenez, comprennent]).
+passé_composé_part(comprendre, compris).
+
 mot(verbe(mettre), 'to put').
 conj_présent(mettre, [mets, mets, met, mettons, mettez, mettent]).
 passé_composé_part(mettre, mis).
+
+mot(verbe(permettre), 'to permit').
+conj_présent(permettre, [permets, permets, permet,
+                         permettons, permettez, permettent]).
+passé_composé_part(permettre, permis).
 
 mot(verbe(devoir), 'to owe').
 conj_présent(devoir, [dois, dois, doit, devons, devez, doivent]).
@@ -161,6 +190,27 @@ passé_composé_part(boire, bu).
 
 % Chapitre 8 - Page 163
 
+chapitre(8, [verbe(répondre), verbe(attendre), verbe(descendre),
+             verbe(entendre), verbe(perdre), verbe(rendre), verbe(vendre),
+             verbe(sortir), verbe(dormir), verbe(mentir), verbe(partir),
+             verbe(sentir), verbe(servir)]).
+mot(répondre, 'to answer').
+mot(attendre, 'to wait for').
+mot(descendre, 'to descend').
+mot(entendre, 'to hear').
+mot(perdre, 'to lose').
+mot(rendre, 'to return (something)').
+mot(vendre, 'to sell').
+
+%% Quelques verbes comme sortir p170
+
+mot(verbe(sortir), 'to go out').
+mot(verbe(dormir), 'to sleep').
+mot(verbe(mentir), 'to lie (speak untruth)').
+mot(verbe(partir), 'to leave (a place)').
+mot(verbe(sentir), 'to smell').
+mot(verbe(servir), 'to serve').
+
 %% :- initialization('définez_régulier'('répondre', 'to answer', avoir-répondu)).
 %% :- initialization('définez_régulier'(attendre, 'to wait for', avoir-attendu)).
 %% :- initialization('définez_régulier'(descendre, 'to descend', être-descendu)).
@@ -170,15 +220,29 @@ passé_composé_part(boire, bu).
 %% :- initialization('définez_régulier'(rendre, 'to return (something), to render, to make', avoir-rendu)).
 %% :- initialization('définez_régulier'(vendre, 'to sell', avoir-vendu)).
 
+chapitre(10, [verbe(voir), verbe(croir), verbe(recevoir)]).
+mot(verbe(voir), 'to see').
+conj_présent(voir, [vois, vois, voit, voyons, voyez, voient]).
+passé_composé_part(voir, vu).
+mot(verbe(croir), 'to believe').
+passé_composé_part(croir, cru).
+conj_présent(croir, [crois, crois, croit, croyons, croyez, croient]).
+mot(verbe(recevoir), 'to receive/entertain').
+passé_composé_part(recevoir, reçu).
+conj_présent(recevoir, [reçois, reçois, reçois, recevons, recevez, reçoivent]).
+
 % Chapitre 11 - Page 226
 
-%% :- initialization('définez_régulier'(finir, 'to finish')).
-%% :- initialization('définez_régulier'(applaudir, 'to applaud')).
-%% :- initialization('définez_régulier'(choisir, 'to choose')).
-%% :- initialization('définez_régulier'('obéir', 'to obey')).
-%% :- initialization('définez_régulier'('réflechir', 'to reflect')).
-%% :- initialization('définez_régulier'('réussir', 'to succeed')).
-%% :- initialization('définez_régulier'(finir, 'to finish')).
+chapitre(11, [verbe(finir), verbe(applaudir), verbe(choisir), verbe(obéir),
+              verbe(réflechir), verbe(réussir), verbe(finir)]).
+
+mot(verbe(finir), 'to finish').
+mot(verbe(applaudir), 'to applaud').
+mot(verbe(choisir), 'to choose').
+mot(verbe(obéir), 'to obey').
+mot(verbe(réflechir), 'to reflect').
+mot(verbe(réussir), 'to succeed').
+mot(verbe(finir), 'to finish').
 
 % Chapter ?
 % phrases for forming questiong
@@ -194,16 +258,6 @@ passé_composé_part(boire, bu).
 %% mot(phrase('quel', 'which (m)')).
 %% mot(phrase('quelle', 'which (f)')).
 %% mot(phrase('qu''est-ce que', 'what is it that...')).
-
-%% mot(phrase('avoir chaud', 'to be hot')).
-%% mot(phrase('avoir froid', 'to be cold')).
-%% mot(phrase('avoir faim', 'to be hungry')).
-%% mot(phrase('avoir soif', 'to be thirsty')).
-%% mot(phrase('avoir honte de', 'to be ashamed of')).
-%% mot(phrase('avoir peur', 'to be afraid')).
-%% mot(phrase('avoir besoin', 'to be in need')).
-%% mot(phrase('avoir envie', 'to have desire')).
-%% mot(phrase('avoir l''air', 'to have the air of')).
 
 %% Pronominal verbs
 
@@ -226,45 +280,81 @@ définez_régulier_pronominal(Infinitif, Anglais) :-
 :- initialization(définez_régulier_pronominal(coucher, 'to go to bed')).
 :- initialization(définez_régulier_pronominal(endormir, 'to fall asleep')).
 
-%% Quelques verbes comme sortir p169
+chapitre(12, [verbe(dire)]).
 
-mot(verbe(sortir), 'to go out').
-mot(verbe(dormir), 'to sleep').
-mot(verbe(mentir), 'to lie (speak untruth)').
-mot(verbe(partir), 'to leave (a place)').
-mot(verbe(sentir), 'to smell').
-mot(verbe(servir), 'to serve').
-
-%% définez_régulier(Infinitif, Anglais) :-
-%%     conj_présent_régulier(Infinitif, Conjugates),
-%%     définez_mot(verbe(Infinitif, Anglais, Conjugates)).
-
-passé_composé_aux(_, avoir).
-
-passé_composé_part(Infinitif, PassePart) :-
-    atom_concat(Root, 'er', Infinitif),
-    atom_concat(Root, 'é', PassePart).
-
-passé_composé_part(Infinitif, PassePart) :-
-    atom_concat(Root, 'ir', Infinitif),
-    atom_concat(Root, 'u', PassePart).
-
-passé_composé_part(Infinitif, PassePart) :-
-    atom_concat(Root, 're', Infinitif),
-    atom_concat(Root, 'u', PassePart).
-
-passé_composé(Infinitif, Aux, Part) :-
-    passé_composé_aux(Infinitif, Aux),
-    passé_composé_part(Infinitif, Part).
-
+mot(verbe(dire), 'to say; to tell').
+conj_présent(dire, [dis, dis, dit, disons, dites, disent]).
+passé_composé_part(dire, dit).
+mot(verbe(lire), 'to read').
+conj_présent(lire, [lis, lis, lit, lisons, lites, lisent]).
+passé_composé_part(lire, lu).
+mot(verbe(écrire), 'to write').
+conj_présent(écrire, [écris, écris, écrit, écrisons, écrites, écrisent]).
+passé_composé_part(écrire, écrit).
 
 % Chapitre 13
 
-chapitre(13, [verbe(savoir), verbe(connaître)]).
+chapitre(13, [verbe(savoir), phrase(sache), verbe(connaître),
+             verbe(reconnaître), verbe(paraître), verbe(apparaître),
+             verbe(disparaître)]).
+
+mot(nom('les gens'), 'the people').
+mot(nom('une lettre'), 'a letter').
+mot(nom('une feuille de papier'), 'a sheet of paper').
+mot(nom('une enveloppe'), 'an envelope').
+mot(nom('un timbre'), 'a stamp').
+mot(nom('un texto'), 'a text message').
+mot(verbe(composer), 'to dial').
+mot(verbe(laisser), 'to leave (a message)').
+mot(nom('boîte vocal'), 'voicemail').
+mot(adjectif('bavard'), 'talkative').
+mot(verbe(réver), 'to dream (reverie)').
+mot(verbe_pronominal(connecter), 'to go online').
+
 mot(verbe(savoir), 'to know').
 mot(verbe(connaître), 'to be acquainted with').
+mot(verbe(reconnaître), 'to recognize').
+mot(verbe(paraître), 'to seem, appear as').
+mot(verbe(apparaître), 'to appear').
+mot(verbe(disparaître), 'to disappear').
 conj_présent(savoir, [sais, sais, sait, savons, savez, savent]).
-conj_présent(connaître, [connais, connais, connait, connaissons, connaissez, conaissent]).
+passé_composé_part(savoir, su).
+
+% Chapter 14
+chapitre(14, [nom(demain), nom(lendemain), nom(prochain), nom(mois),
+              verbe(expliquer), adjectif('plusieurs'), nom('la gare'),
+              nom('un billet'), nom('un guichet'), nom('aller simple'),
+              nom('aller-retour'), nom('un place'), nom('un siège couloir'),
+              nom('un siège fenêtre'), nom('le wagon'), nom('la correspondance'),
+              nom('lé aeroport'), nom('les vols'), nom('un autocar'),
+              verbe(louer), nom('la valise'), nom('le départ'),
+              verbe(enregistrer), nom('la porte d''embarquement')
+             ]).
+mot(nom(demain), 'tomorrow').
+mot(nom(lendemain), 'the day after').
+mot(nom(prochain), 'next').
+mot(nom(mois), 'month').
+mot(verbe(expliquer), 'to explain').
+
+mot(adjectif('plusieurs'), 'several').
+mot(nom('la gare'), 'the station').
+mot(nom('un billet'), 'a ticket').
+mot(nom('un guichet'), 'a ticket window').
+mot(nom('aller simple'), 'one way trip').
+mot(nom('aller-retour'), 'round trip').
+mot(nom('un place'), 'a place').
+mot(nom('un siège couloir'), 'an aisle seat').
+mot(nom('un siège fenêtre'), 'a window seat').
+mot(nom('le wagon'), 'the train car').
+mot(nom('la correspondance'), 'the flight transfer').
+mot(nom('le aéroport'), 'the airport').
+mot(nom('les vols'), 'the flights').
+mot(nom('un autocar'), 'a shuttle').
+mot(verbe(louer), 'to rent').
+mot(nom('la valise'), 'the luggage').
+mot(nom('le départ'), 'the departure').
+mot(verbe(enregistrer), 'to check in (for flight)').
+mot(nom('la porte d''embarquement'), 'the gate').
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Regular verb conjugations go at the end.
@@ -290,9 +380,36 @@ conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]) :-
     atom_concat(Root, 'enez', Vous),
     atom_concat(Root, 'iennent', Ils).
 
+passé_composé_part(Infinitif, Part) :-
+    memberchk(Infinitif, [venir, revenir, devenir]),
+    atom_concat(Root, 'ir', Infinitif),
+    atom_concat(Root, 'u', Part).
+
+% like connaître
+conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]) :-
+    memberchk(Infinitif, [connaître, reconnaître, paraître, apparaître,
+                          disparaître]),
+    atom_concat(Root, 'aître', Infinitif),
+    atom_concat(Root, 'ais', Je),
+    atom_concat(Root, 'ais', Tu),
+    atom_concat(Root, 'aît', Il),
+    atom_concat(Root, 'aissons', Nous),
+    atom_concat(Root, 'aissez', Vous),
+    atom_concat(Root, 'aissent', Ils).
+
+%conj_présent(connaître, [connais, connais, connait, connaissons, connaissez, connaissent]).
+%passé_composé_part(connaître, connu).
+
+passé_composé_part(Infinitif, Part) :-
+    memberchk(Infinitif, [connaître, reconnaître, paraître, apparaître,
+                          disparaître]),
+    atom_concat(Root, 'aître', Infinitif),
+    atom_concat(Root, 'u', Part).
+
 passé_composé_aux(Infinitif, être) :-
     memberchk(Infinitif, [venir, revenir, devenir]).
 
+% conjugate like sortir
 conj_présent(Infinitif,
              [Je, Tu, Il,
               Nous, Vous, Ils]) :- 
@@ -375,3 +492,28 @@ conj_imparfait(Infinitif, [Fst, Snd, Thd, FstPl, SndPl, ThdPl]) :-
     atom_concat(Root, 'ions', FstPl),
     atom_concat(Root, 'iez', SndPl),
     atom_concat(Root, 'aient', ThdPl).
+
+%% définez_régulier(Infinitif, Anglais) :-
+%%     conj_présent_régulier(Infinitif, Conjugates),
+%%     définez_mot(verbe(Infinitif, Anglais, Conjugates)).
+
+passé_composé_aux(_, avoir).
+
+passé_composé_part(Infinitif, PassePart) :-
+    atom_concat(Root, 'er', Infinitif),
+    atom_concat(Root, 'é', PassePart).
+
+passé_composé_part(Infinitif, PassePart) :-
+    atom_concat(Root, 'ir', Infinitif),
+    atom_concat(Root, 'i', PassePart).
+
+passé_composé_part(Infinitif, PassePart) :-
+    atom_concat(Root, 're', Infinitif),
+    atom_concat(Root, 'u', PassePart).
+
+passé_composé(verbe(Infinitif), Aux, Part) :-
+    passé_composé_aux(Infinitif, Aux),
+    passé_composé_part(Infinitif, Part).
+
+passé_composé(verbe_pronominal(Infinitif), être, Part) :-
+    passé_composé_part(Infinitif, Part).

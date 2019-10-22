@@ -1,4 +1,4 @@
-%:- initialization(([dict], quiz_all, halt)).
+:- discontiguous(quiz_mot/4).
 
 record_success(stats(Correct0, Total0), stats(Correct, Total)) :-
     succ(Correct0, Correct),
@@ -16,16 +16,31 @@ affichez_stats(Correct, Total, Accuracy) :-
     format('~nCorrect   ~d~nQuestions ~d~nAccuracy  ~1f%%~n',
            [Correct, Total, Accuracy]).
 
-quiz(Mots, ConjTerm) :-
+quiz(Mots0, ConjTerm) :-
+    permute_list(Mots0, Mots),
+    length(Mots, N),
+    format('Randomized ~d words...~n', [N]),
     catch(quiz_mots(Mots, ConjTerm, Stats), passez_tout_mots(Stats),
           (write('Aborted'), nl)),
     affichez_stats(Stats),
     !.
 
 quiz_all :-
-    findall(X-Ang, mot(X, Ang), Mots0),
-    permute_list(Mots0, Mots),
+    findall(X-Ang, mot(X, Ang), Mots),
+    length(Mots, N),
+    format('Quizing on all ~d words...~n', [N]),
     quiz(Mots, conj_présent).
+
+quiz_chapitre([], Mots) :-
+    quiz(Mots, conj_présent).
+quiz_chapitre([M|L], Mots) :-
+    mot(M, Ang), !,
+    quiz_chapitre(L, [M-Ang|Mots]).
+quiz_chapitre([_|L], Mots) :-
+    quiz_chapitre(L, Mots).
+quiz_chapitre(X) :-
+    chapitre(X, Mots),
+    quiz_chapitre(Mots, []).
 
 write_anglais(Anglais) :-
     format('En anglaise: "~a"', [Anglais]).
@@ -80,7 +95,7 @@ quiz_mots([Mot|L], Conjer, StatsIn, StatsOut) :-
     catch(quiz_mot(Mot, Conjer, StatsIn, Stats), passez_ce_mot(Stats), true),
     quiz_mots(L, Conjer, Stats, StatsOut).
 
-translate(phrase(Francais, Anglais), Francais, Anglais).
+%% translate(phrase(Francais, Anglais), Francais, Anglais).
 %% translate(pronom_interrogatif(Francais, Anglais), Francais, Anglais).
 %% translate(adverb_interrogatif(Francais, Anglais), Francais, Anglais).
 %% translate(conjunction(Francais, Anglais), Francais, Anglais).
@@ -111,7 +126,9 @@ translate(phrase(Francais, Anglais), Francais, Anglais).
 %%                     [Infinitif]),
 %%      throw(error(ErrMsg))).
 
-verbe_questionnes(Infinitif, Conjer,
+%% regular verbs and pronominal verbs use verbe_questionnes
+
+verbe_questionnes(verbe(Infinitif), Conjer,
                   ['infinitif? '-Infinitif,
                    'je ... '-Je,
                    'tu ... '-Tu,
@@ -122,22 +139,22 @@ verbe_questionnes(Infinitif, Conjer,
                    'Passe Compose? (aux + part)'-PC]) :-
     Conj =.. [Conjer, Infinitif, [Je, Tu, Il, Nous, Vous, Ils]],
     call(Conj),
-    passé_composé(Infinitif, Aux, PassePart),
+    passé_composé(verbe(Infinitif), Aux, PassePart),
     atom_concat(Aux, ' ', Tmp),
     atom_concat(Tmp, PassePart, PC).
 
-verbe_pronominal_questionnes(Infinitif, Conjer,
-                             ['infinitif? '-SeInfinitif,
-                              'je ... '-MeJe,
-                              'tu ... '-TeTu,
-                              'il/elles/on ... '-SeIl,
-                              'nous ... '-NousNous,
-                              'vous ... '-VousVous,
-                              'ils/elles ... '-SeIls,
-                              'Passe Compose? (aux + part)'-PasseComp]) :-
+verbe_questionnes(verbe_pronominal(Infinitif), Conjer,
+                 ['infinitif? '-SeInfinitif,
+                  'je ... '-MeJe,
+                  'tu ... '-TeTu,
+                  'il/elles/on ... '-SeIl,
+                  'nous ... '-NousNous,
+                  'vous ... '-VousVous,
+                  'ils/elles ... '-SeIls,
+                  'Passe Compose? (aux + part)'-PasseComp]) :-
     Conj =.. [Conjer, Infinitif, [Je, Tu, Il, Nous, Vous, Ils]],
     call(Conj),
-    passé_composé(Infinitif, Aux, PassePart),
+    passé_composé(verbe_pronominal(Infinitif), Aux, PassePart),
     atom_concat('se ', Infinitif, SeInfinitif),
     atom_concat('me ', Je, MeJe),
     atom_concat('te ', Tu, TeTu),
@@ -149,23 +166,23 @@ verbe_pronominal_questionnes(Infinitif, Conjer,
     atom_concat(Tmp1, ' ', Tmp2),
     atom_concat(Tmp2, PassePart, PasseComp).
 
-quiz_mot(verbe_pronominal(Infinitif)-Anglais,
-         Conjer,
-         StatsIn, StatsOut) :-
-    !,
-    verbe_pronominal_questionnes(Infinitif, Conjer, QAs),
+quiz_mot(Verbe-Anglais, Conjer, StatsIn, StatsOut) :-
+    (Verbe = verbe(_); Verbe = verbe_pronominal(_)),
+    verbe_questionnes(Verbe, Conjer, QAs),
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 
-quiz_mot(verbe(Infinitif)-Anglais, Conjer, StatsIn, StatsOut) :-
-    !,
-    verbe_questionnes(Infinitif, Conjer, QAs),
-    write_anglais(Anglais), nl,
+% nouns, adjectives use mot_questionnes
+mot_questionnes(Francais, Anglais, [Q-Francais]) :-
+    atom_concat(Anglais, '?', Q).            
+
+quiz_mot(Mot-Anglais, _, StatsIn, StatsOut) :-
+    (Mot = nom(X); Mot = adjectif(X)),
+    mot_questionnes(X, Anglais, QAs),
     quiz_questions(QAs, StatsIn, StatsOut).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+% skip pronouns
+quiz_mot(pronom(_)-_, _, Stats, Stats).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -175,3 +192,64 @@ quiz_imparfait :-
     %append(L0, L1, L),
     permute_list(L0, Lr),
     quiz(Lr, conj_imparfait).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Ask about more complex expressions
+
+random_subject(Subj) :-
+    findall(X, subject(X), L0),
+    permute_list(L0, L),
+    random_subject(Subj, L).
+
+random_subject(Subj, [Subj|_]).
+random_subject(Subj, [_|L]) :- random_subject(Subj, L).
+
+join_mots([], '') :- !.
+join_mots(L, A) :- join_mots(L, '', A).
+join_mots([], A, B) :- atom_concat(' ', B, A).
+join_mots([X,Y|L], A, B) :-
+    memberchk(X, [je, le, la]),
+    atom_chars(X, [Xhead|_]),
+    atom_chars(Y, [Yhead|Yrest]),
+    memberchk(Yhead, [a, e, i, o, u]), %vowels, right?
+    atom_chars(Z, [Xhead,'''',Yhead|Yrest]),
+    atom_concat(A, ' ', A0),
+    atom_concat(A0, Z, A1),
+    !,
+    join_mots(L, A1, B).
+join_mots([X|L], A, B) :-
+    atom_concat(A, ' ', A0),
+    atom_concat(A0, X, A1),
+    join_mots(L, A1, B).
+
+expression_questionnes(Anglais, Conjer, [Questionne-Answer]) :-
+    random_subject(Subj), !,
+    format_to_atom(Questionne, '~a (avec subjet "~a")', [Anglais, Subj]),
+    phrase(expression(Anglais, Subj, Conjer), L),
+    join_mots(L, Answer).
+
+quiz_expression(expression(Anglais), Conjer, Stats0, Stats) :-
+    expression_questionnes(Anglais, Conjer, QAs),
+    quiz_questions(QAs, Stats0, Stats).
+
+quiz_expressions(L, Conjer, Stats) :-
+    quiz_expressions(L, Conjer, stats(0, 0), Stats).
+quiz_expressions([], _, Stats, Stats).
+quiz_expressions([X|L], Conjer, Stats0, Stats) :-
+    nl,
+    catch(quiz_expression(X, Conjer, Stats0, Stats1),
+          passez_ce_mot(Stats1), true),
+    quiz_expressions(L, Conjer, Stats1, Stats).
+
+find_all_expr(M) :-
+    findall(X, chapitre(_, X), L0),
+    flatten(L0, L),
+    findall(expression(Y), member(expression(Y), L), M).
+
+quiz_all_expr :-
+    find_all_expr(L0),
+    permute_list(L0, L),
+    catch(quiz_expressions(L, conj_présent, Stats),
+          passez_tout_mots(Stats), true),
+    affichez_stats(Stats).

@@ -32,16 +32,9 @@ quiz_all :-
     format('Quizing on all ~d words...~n', [N]),
     quiz(L, conj_présent).
 
-quiz_chapitre([], Mots) :-
-    quiz(Mots, conj_présent).
-quiz_chapitre([M|L], Mots) :-
-    mot(M, Ang), !,
-    quiz_chapitre(L, [M-Ang|Mots]).
-quiz_chapitre([_|L], Mots) :-
-    quiz_chapitre(L, Mots).
 quiz_chapitre(X) :-
-    chapitre(X, Mots),
-    quiz_chapitre(Mots, []).
+    chapitre(X, L),
+    quiz(L, conj_présent).
 
 write_anglais(Anglais) :-
     format('En anglaise: "~a"', [Anglais]).
@@ -92,8 +85,10 @@ permute_list_(L0, L) :-
 quiz_mots(L, Conjer, Stats) :- quiz_mots(L, Conjer, stats(0, 0), Stats).
 quiz_mots([], _, Stats, Stats).
 quiz_mots([Mot|L], Conjer, StatsIn, StatsOut) :-
+    write(Mot), 
     nl,
     catch(quiz_mot(Mot, Conjer, StatsIn, Stats), passez_ce_mot(Stats), true),
+    !,
     quiz_mots(L, Conjer, Stats, StatsOut).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -117,7 +112,7 @@ questionnes(verbe_pronominal(Infinitif), Conjer,
             ['infinitif? '-SeInfinitif,
              'je ... '-MeJe,
              'tu ... '-TeTu,
-             'il/elles/on ... '-SeIl,
+             'il/elle/on ... '-SeIl,
              'nous ... '-NousNous,
              'vous ... '-VousVous,
              'ils/elles ... '-SeIls,
@@ -132,9 +127,7 @@ questionnes(verbe_pronominal(Infinitif), Conjer,
     atom_concat('nous ', Nous, NousNous),
     atom_concat('vous ', Vous, VousVous),
     atom_concat('se ', Ils, SeIls),
-    atom_concat('se ', Aux, Tmp1),
-    atom_concat(Tmp1, ' ', Tmp2),
-    atom_concat(Tmp2, PassePart, PasseComp).
+    join_mots(['se', Aux, PassePart], PasseComp).
 
 quiz_mot(Verbe-Anglais, Conjer, StatsIn, StatsOut) :-
     (Verbe = verbe(_); Verbe = verbe_pronominal(_)),
@@ -142,12 +135,43 @@ quiz_mot(Verbe-Anglais, Conjer, StatsIn, StatsOut) :-
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 
-quiz_mot(Mot-Anglais, _, StatsIn, StatsOut) :-
-    (Mot = nom(A, _), !;
-     Mot = adjectif(A/_), !;
-     Mot = adjectif(A-_), !;
-     Mot = adjectif(A), !),
-    atom_concat(Anglais, '?', Q),
+probably(P) :-
+    randomize,
+    random(X),
+    X < P.
+
+déf_article(m, sg, le).
+déf_article(f, sg, la).
+déf_article(m, pl, les).
+déf_article(f, pl, las).
+
+indéf_article(m, sg, un).
+indéf_article(f, sg, une).
+
+rand_article(G, N, Art, def) :- probably(0.5), déf_article(G, N, Art), !.
+rand_article(G, N, Art, indef) :- indéf_article(G, N, Art).
+
+quiz_mot(nom(A0, G)-Anglais, _, StatsIn, StatsOut) :-
+    rand_article(G, sg, Art, T),
+    (T = def, atom_concat('the ', Anglais, Q0);
+     T = indef, atom_concat('a ', Anglais, Q0)),
+    atom_concat(Q0, '?', Q),
+    join_mots([Art, A0], A),
+    quiz_questions([Q-A], StatsIn, StatsOut).
+
+random_gender(G) :- permute_list([m, f], [G|_]).
+
+genderize_adjectif(adjectif(Masc/_), m, Masc).
+genderize_adjectif(adjectif(Masc-_), m, Masc).
+genderize_adjectif(adjectif(Masc), m, Masc).
+genderize_adjectif(adjectif(_/F), f, F).
+genderize_adjectif(adjectif(Adj-Suffix), f, F) :- atom_concat(Adj, Suffix, F).
+genderize_adjectif(adjectif(F), f, F).
+
+quiz_mot(adjectif(Adj)-Anglais, _, StatsIn, StatsOut) :-
+    random_gender(G),
+    genderize_adjectif(adjectif(Adj), G, A),
+    format_to_atom(Q, '~a (~a) ?', [Anglais, G]),
     quiz_questions([Q-A], StatsIn, StatsOut).
 
 % skip pronouns
@@ -183,7 +207,7 @@ join_mots([X,Y|L], A, B) :-
     memberchk(X, [je, le, la, de]),
     atom_chars(X, [Xhead|_]),
     atom_chars(Y, [Yhead|Yrest]),
-    memberchk(Yhead, [a, e]),
+    memberchk(Yhead, [a, á, à, e, é, è, i]),
     atom_chars(Z, [Xhead,'''',Yhead|Yrest]),
     atom_concat(A, ' ', A0),
     atom_concat(A0, Z, A1),
@@ -201,7 +225,7 @@ expression_questionnes(Anglais, Conjer, [Questionne-Answer]) :-
     phrase(expression(Anglais, Subj, Conjer), L),
     join_mots(L, Answer).
 
-quiz_mot(expression(Anglais), Conjer, Stats0, Stats) :-
+quiz_mot(expression-Anglais, Conjer, Stats0, Stats) :-
     expression_questionnes(Anglais, Conjer, QAs),
     quiz_questions(QAs, Stats0, Stats).
 
@@ -217,7 +241,7 @@ quiz_expressions([X|L], Conjer, Stats0, Stats) :-
 find_all_expr(M) :-
     findall(X, chapitre(_, X), L0),
     flatten(L0, L),
-    findall(expression(Y), member(expression(Y), L), M).
+    findall(expression-A, member(expression-A, L), M).
 
 quiz_all_expr :-
     find_all_expr(L0),

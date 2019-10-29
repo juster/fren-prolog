@@ -108,7 +108,7 @@ chapitre(6, [verbe(pouvoir) - 'to be able',
              verbe(vouloir) - 'to want',
              verbe(commencer) - 'to begin',
              verbe(manger) - 'to eat',
-             verbe(préférér) - 'to prefer',
+             verbe(préférer) - 'to prefer',
              verbe(espérer) - 'to hope (aspire)',
              verbe(répéter) - 'to repeat',
              verbe(payer) - 'to pay',
@@ -152,7 +152,7 @@ chapitre(7, [verbe(prendre) - 'to take',
              verbe(mettre) - 'to put',
              verbe(permettre) - 'to permit',
              verbe(devoir) - 'to owe',
-             verbe(boir) - 'to drink']).
+             verbe(boire) - 'to drink']).
 
 conj_présent(prendre, [prends, prends, prend, prenons, prenez, prennent]).
 passé_composé_part(prendre, pris).
@@ -239,7 +239,7 @@ passé_composé_part(voir, vu).
 passé_composé_part(croir, cru).
 conj_présent(croir, [crois, crois, croit, croyons, croyez, croient]).
 passé_composé_part(recevoir, reçu).
-conj_présent(recevoir, [reçois, reçois, reçois, recevons, recevez, reçoivent]).
+conj_présent(recevoir, [reçois, reçois, reçoit, recevons, recevez, reçoivent]).
 
 % Chapitre 11 - Page 226
 
@@ -309,7 +309,7 @@ chapitre(13,
           verbe(paraître)-'to seem, appear as',
           verbe(apparaître)-'to appear',
           verbe(disparaître)-'to disappear',
-          nom(gens, m)-people,
+          nom(gen, m)-person,
           nom(lettre, f)-letter,
           nom('feuille de papier', f)-'sheet of paper',
           nom(enveloppe, f)-envelope,
@@ -345,6 +345,7 @@ passé_composé_part(Infinitif, Part) :-
     atom_concat(Root, 'aître', Infinitif),
     atom_concat(Root, 'u', Part).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chapter 14
 
 chapitre(14, [nom(demain, m) - tomorrow,
@@ -366,14 +367,14 @@ chapitre(14, [nom(demain, m) - tomorrow,
               nom(aeroport, m) - airport,
               nom(vol, m) - flight,
               nom(autocar, m) - shuttle,
-              verbe(louer) - late,
+              verbe(louer) - 'to rent',
               nom(valise, f) - luggage,
               nom(départ, m) - departure,
               verbe(enregistrer) - 'check-in',
               nom(porte, m) - 'gate/door',
               %% La forme des adverbes
               adjectif(actuel-le) - current,
-              adjectif(discret/discrète) - discreet,
+              adjectif(discret/discrète) - discrete,
               adjectif(doux/douce) - gentle,
               adjectif(exacte) - exact,
               adjectif(franc-he) - frank,
@@ -383,6 +384,45 @@ chapitre(14, [nom(demain, m) - tomorrow,
               adjectif(seul-e) - alone]).
 
 expression('airline gate', _, _) --> [porte, de, embarquement].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Chapter 15
+
+chapitre(15, [verbe(ouvrir) - 'to open',
+              verbe(couvrir) - 'to cover',
+              verbe(découvrir) - 'to discover',
+              verbe(offrir) - 'to offer',
+              verbe(souffrir) - 'to suffer',
+              verbe(fermer) - 'to close',
+              verbe(accueillir) - 'to welcome',
+              nom('pays d''asile', m) - 'country of asylum',
+              nom(immigré, m) - 'immigrant',
+              nom(réfugié, m) - 'refugee',
+              nom(intégration, f) - 'integration',
+              nom(étranger, m) - 'foreigner',
+              nom(citoyen, m) - 'citizen',
+              nom(siécle, m) - 'century',
+              expression - 'take advantage of it',
+              nom('Maghreb', m) - 'north african',
+              adjectif(maghrébin-e) - 'north african'              
+             ]).
+
+conj_présent(Infinitif, L) :-
+    member(Infinitif, [ouvrir, couvrir, offrir, découvrir, souffrir]), !,
+    atom_concat(Root, ir, Infinitif),
+    atom_concat(Root, er, Fake),
+    conj_présent(Fake, L).
+
+passé_composé_part(Infinitif, Part) :-
+    member(Infinitif, [ouvrir, couvrir, offrir, découvrir, souffrir]), !,
+    atom_concat(Root, rir, Infinitif),
+    atom_concat(Root, ert, Part).
+
+expression('take advantage of it', S, Conj) -->
+    [S], verbe_conjugate(S, profiter, Conj), [de, il].
+
+conj_présent(accueillir, [accueille, accueilles, accueille,
+                          accueillons, accueillez, accueillent]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Regular verb conjugations go at the end.

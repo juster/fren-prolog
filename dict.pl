@@ -108,7 +108,7 @@ chapitre(2, [verbe(chercher) - 'to look for',
              verbe(donner) - 'to give',
              verbe(écouter) - 'to listen (to)',
              verbe(étudier) - 'to study',
-             verbe(habiter) - 'to reside, to habitate',
+             verbe(habiter) - 'to reside/to habitate',
              verbe(parler) - 'to speak',
              %expression('to think that'), expression('to think about'),
              %expression('to have an opinion'),
@@ -134,6 +134,27 @@ conj_présent(aller, [vais, vas, va, allons, allez, vont]).
 passé_composé_aux(aller, être).
 passé_composé_part(aller, allé).
 
+conj_présent(venir, [viens, viens, vient, venons, venez, viennent]).
+conj_présent(devenir, [deviens, deviens, devient, devenons, devenez, deviennent]).
+conj_présent(revenir, [reviens, reviens, revient, revenons, revenez, reviennent]).
+
+% like venir
+conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]) :-
+    memberchk(Infinitif, [venir, revenir, devenir]),
+    atom_concat(Root, 'enir', Infinitif),
+    atom_concat(Root, 'iens', Je),
+    atom_concat(Root, 'iens', Tu),
+    atom_concat(Root, 'ient', Il),
+    atom_concat(Root, 'enons', Nous),
+    atom_concat(Root, 'enez', Vous),
+    atom_concat(Root, 'iennent', Ils).
+
+% irregular passé composé participles for -ir verbs
+passé_composé_part(Infinitif, Part) :-
+    memberchk(Infinitif, [venir, revenir, devenir]),
+    atom_concat(Root, 'ir', Infinitif),
+    atom_concat(Root, 'u', Part).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Chapitre 4
 
@@ -157,6 +178,7 @@ subject_verbe(vous, L, X) :- nth(5, L, X).
 subject_verbe(ils, L, X) :- nth(6, L, X).
 %% subject_verbes(S, Inf) --> {singular(S), conj_présent(Inf, L), nth(3, L, X)}
 %% subject_verbes(S, Inf) --> {plural(S), conj_présent(Inf, L), nth(6, L, X)}
+%
 
 action(Subj, Inf, Conjer) -->
     {Conj =.. [Conjer, Inf, L], call(Conj), subject_verbe(Subj, L, V)}, [V].
@@ -304,6 +326,7 @@ conj_présent(Infinitif,
     append(RootChars, [X,'e','n','t'], IlsChars),
     atom_chars(Ils, IlsChars).
 
+% sortir verbs have irregular passé composé participles
 passé_composé_part(Infinitif, PassePart) :-
     memberchk(Infinitif, [sortir, dormir, mentir,
                           partir, sentir, servir]),
@@ -400,7 +423,7 @@ chapitre(13,
          [verbe(savoir)-'to know',
           verbe(connaître)-'to be acquainted with',
           verbe(reconnaître)-'to recognize',
-          verbe(paraître)-'to seem, appear as',
+          verbe(paraître)-'to seem/appear as',
           verbe(apparaître)-'to appear',
           verbe(disparaître)-'to disappear',
           nom(gen, m)-person,
@@ -680,23 +703,25 @@ avoir_suffix(Root, [Je, Tu, Il, Nous, Vous, Ils]) :-
 
 %% Irregularities.
 
-irregular_future([aller - 'to go',
-		  avoir - 'to have',
-		  devoir - 'to need to',
-		  envoyer - 'to send',
-		  être - 'to be',
-		  faire - 'to make',
-		  pouvoir - 'to be able to',
-		  savoir - 'to know',
-		  venir - 'to come',
-		  revenir - 'to return',
-		  devenir - 'to become',
-		  voir - 'to see',
-		  recevoir - 'to receive',
-		  vouloir - 'to want',
-		  acheter - 'to buy',
-		  appeler - 'to call',
-		  payer - 'to pay']).
+irregular_future([
+    aller - 'to go',
+    avoir - 'to have',
+    devoir - 'to need to',
+    envoyer - 'to send',
+    être - 'to be',
+    faire - 'to make',
+    pouvoir - 'to be able to',
+    savoir - 'to know',
+    venir - 'to come',
+    revenir - 'to return',
+    devenir - 'to become',
+    voir - 'to see',
+    recevoir - 'to receive',
+    vouloir - 'to want',
+    acheter - 'to buy',
+    appeler - 'to call',
+    payer - 'to pay'
+]).
 
 conj_future(aller, Conj) :- avoir_suffix(ir, Conj).
 conj_future(avoir, Conj) :- avoir_suffix(aur, Conj).
@@ -726,11 +751,14 @@ conj_future(Infinitif, Conj) :-
 
 %% Regular form for -re verbs.
 conj_future(Infinitif, Conj) :-
-    atom_concat(Root, re, Infinitif),
+    atom_concat(Root0, re, Infinitif),
+    atom_concat(Root0, r, Root),
     avoir_suffix(Root, Conj).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Regular verb conjugations go at the end.
+%% REGULAR VERBS
+
+%% Regular verb conjugations go at the end so they have lower precedence.
 
 % like payer
 conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]) :- 
@@ -742,22 +770,7 @@ conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]) :-
     atom_concat(Root, 'yez', Vous),
     atom_concat(Root, 'ient', Ils).
 
-% like venir
-conj_présent(Infinitif, [Je, Tu, Il, Nous, Vous, Ils]) :-
-    memberchk(Infinitif, [venir, revenir, devenir]),
-    atom_concat(Root, 'enir', Infinitif),
-    atom_concat(Root, 'iens', Je),
-    atom_concat(Root, 'iens', Tu),
-    atom_concat(Root, 'ient', Il),
-    atom_concat(Root, 'enons', Nous),
-    atom_concat(Root, 'enez', Vous),
-    atom_concat(Root, 'iennent', Ils).
-
-passé_composé_part(Infinitif, Part) :-
-    memberchk(Infinitif, [venir, revenir, devenir]),
-    atom_concat(Root, 'ir', Infinitif),
-    atom_concat(Root, 'u', Part).
-
+% irregular passé composé auxilliary verb
 passé_composé_aux(Infinitif, être) :-
     memberchk(Infinitif, [venir, revenir, devenir]).
 
@@ -842,3 +855,28 @@ passé_composé(verbe(Infinitif), Aux, Part) :-
 
 passé_composé(verbe_pronominal(Infinitif), être, Part) :-
     passé_composé_part(Infinitif, Part).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+subject_verbe_expr(Subj, Verbe, Tense) -->
+    [Subj], verbe_conj(Subj, Verbe, Tense).
+
+subject_verbe_expr(Subj, Aux, Tense, Verbe) -->
+    [Subj], verbe_conj(Subj, Aux, Tense, Verbe).
+
+verbe_conj(Subj, verbe(Inf), present) -->
+    {conj_présent(Inf, L), subject_verbe(Subj, L, X)}, !, [X].
+
+verbe_conj(Subj, Verbe, passe) -->
+    {passé_composé(Verbe, Auxilliary, Participle)}, !, verbe_conj(Subj, verbe(Auxilliary), present),
+    [Participle].
+
+verbe_conj(Subj, verbe(Inf), future) -->
+    {conj_future(Inf, L), subject_verbe(Subj, L, X)}, !, [X].
+
+verbe_conj(Subj, verbe(Inf), imparfait) -->
+    {conj_imparfait(Inf, L), subject_verbe(Subj, L, X)}, !, [X].
+
+verbe_conj(Subj, Aux, Tense, verbe(Inf)) -->
+    verbe_conj(Subj, Aux, Tense), [Inf].
+

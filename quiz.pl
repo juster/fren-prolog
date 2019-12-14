@@ -14,7 +14,7 @@ affichez_stats(stats(Correct, Total)) :-
     Total =\= 0,
     affichez_stats(Correct, Total, (Correct / Total) * 100).
 affichez_stats(Correct, Total, Accuracy) :-
-    format('~nCorrect   ~d~nQuestions ~d~nAccuracy  ~1f%%~n',
+    format('~nCorrect   ~d~nTotal     ~d~nAccuracy  ~1f%%~n',
            [Correct, Total, Accuracy]).
 
 quiz(Mots0, ConjTerm) :-
@@ -49,7 +49,7 @@ quiz_question(Question, Response,
               StatsIn, StatsOut) :-
     format('~a~n', [Question]),
     readln(Line),
-    (Line = 'SKIP', throw(passez_ce_mot(StatsIn));
+    (Line = 'SKIP', write(Response), nl, throw(passez_ce_mot(StatsIn));
      Line = 'EXIT', throw(passez_tout_mots(StatsIn));
      (Line = Response,
       record_success(StatsIn, StatsOut);
@@ -251,10 +251,42 @@ quiz_future :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-
 quiz_verbes :-
     findall(X, chapitre(_N, X), L0),
     flatten(L0, L1),
     findall(verbe(Inf)-Ang, member(verbe(Inf)-Ang, L1), L2),
+    quiz_verbes(L2).
     
+quiz_verbes(Vs0) :-
+    permute_list(Vs0, Vs),
+    catch(quiz_verbes(Vs, stats(0,0), Stats), passez_tout_mots(Stats), (write('Aborted'), nl)),
+    affichez_stats(Stats).
+
+quiz_verbes([], Stats, Stats).
+
+quiz_verbes([V-Ang|L], Stats0, Stats) :-
+    catch(quiz_verbe(V-Ang, Stats0, Stats1), passez_ce_mot(Stats1), (write('Skipped'), nl)),
+    quiz_verbes(L, Stats1, Stats).
+
+quiz_verbe_qa(Verbe-Anglaise, Subject, infinitive, Question-Answer) :-
+    !,
+    permute_list([present, passe, future], [Tense|_]),
+    permute_list(
+        [pouvoir-'able to', devoir-'needs to', aller-'going to', venir-'come from'],
+        [Aux-AuxAng|_]
+    ),
+    write_to_atom(Question, [Subject, AuxAng, Tense, Anglaise]),
+    phrase(subject_verbe_expr(Subject, verbe(Aux), Tense, Verbe), L),
+    join_mots(L, Answer).
+
+quiz_verbe_qa(Verbe-Anglaise, Subject, Tense, Question-Answer) :-
+    write_to_atom(Question, [Subject, Anglaise, Tense]),
+    phrase(subject_verbe_expr(Subject, Verbe, Tense), L),
+    join_mots(L, Answer).
+
+quiz_verbe(Verbe, Stats0, Stats) :-
+    findall(S, subject(S), S0),
+    permute_list(S0, [Subject|_]),
+    permute_list([present, passe, future, imparfait, infinitive], [Tense|_]),
+    quiz_verbe_qa(Verbe, Subject, Tense, QA),
+    quiz_questions([QA], Stats0, Stats).

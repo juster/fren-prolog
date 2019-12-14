@@ -1,4 +1,5 @@
-%%:- use_module(library(readutil)).
+%% -*- prolog -*-
+
 :- dynamic(mot/2, conj_présent/2,
            passé_composé_aux/2, passé_composé_part/2).
 :- discontiguous(mot/2, chapitre/2, conj_présent/2,
@@ -7,7 +8,77 @@
 
 définez_mot(Mot, Ang) :- retractall(mot(Mot, _)), assertz(mot(Mot, Ang)).
 
-% Chapitre 1
+%% EXPRESSIONS
+
+join_mots([], '') :- !.
+join_mots(L, A) :- join_mots(L, '', A).
+join_mots([], A, B) :- atom_concat(' ', B, A).
+
+join_mots([X,Y|L], A, B) :-
+    memberchk(X, [je, le, la, de]),
+    atom_chars(X, [Xhead|_]),
+    atom_chars(Y, [Yhead|Yrest]),
+    memberchk(Yhead, [a, á, à, e, é, è, i, ï, h]),
+    atom_chars(Z, [Xhead,'''',Yhead|Yrest]),
+    !,
+    join_mots([Z|L], A, B).
+
+join_mots([de,le|L], A, B) :- join_mots([du|L], A, B).
+
+join_mots([de,les|L], A, B) :- join_mots([des|L], A, B).
+
+join_mots([à,le|L], A, B) :- join_mots([au|L], A, B).
+
+join_mots([à,les|L], A, B) :- join_mots([aux|L], A, B).
+
+join_mots([X|L], A, B) :-
+    atom_concat(A, ' ', A0),
+    atom_concat(A0, X, A1),
+    join_mots(L, A1, B).
+
+%% NOUNS
+
+%% Guess the gender of nouns. (p110)
+
+guess_gender(X, m) :- \+ member(X, [page]), atom_concat(X, _, age).
+guess_gender(X, m) :- \+ member(X, [eau]), atom_concat(X, _, eau).
+guess_gender(X, m) :- atom_concat(_, isme, X).
+guess_gender(X, m) :- atom_concat(_, ment, X).
+guess_gender(X, f) :- atom_concat(_, esse, X).
+guess_gender(X, f) :- atom_concat(_, ie, X).
+guess_gender(X, f) :- atom_concat(_, sion, X).
+guess_gender(X, f) :- \+ member(X, [côté]), atom_concat(_, té, X).
+guess_gender(X, f) :- atom_concat(_, tion, X).
+guess_gender(X, f) :- atom_concat(_, ure, X).
+guess_gender(X, f) :- atom_concat(_, ude, X).
+
+%% Guess the plural form of nouns. (p111)
+
+guess_plural(X, Y) :-
+    (atom_concat(Z, al, X); atom_concat(Z, ail, X)),
+    atom_concat(Z, aux, Y).
+
+guess_plural(X, Y) :-
+    (atom_concat(Z, eu, X); atom_concat(Z, eau, X)),
+    atom_concat(Z, x, Y).
+
+guess_plural(X, X) :- atom_concat(_, s, X).
+
+guess_plural(X, X) :- atom_concat(_, x, X).
+
+guess_plural(X, X) :- atom_concat(_, z, X).
+
+possessive(je, mon).
+possessive(tu, ton).
+possessive(il, son).
+possessive(elle, son).
+possessive(nous, nos).
+possessive(vous, vos).
+possessive(ils, leurs).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CHAPTER 1
+
 chapitre(1, [verbe(être) - 'to be',
              pronom(je) - 'I',
              pronom(tu) - 'you',
@@ -28,7 +99,9 @@ pronom(ils).
 conj_présent(être, [suis, es, est, sommes, êtes, sont]).
 passé_composé_part(être, 'été').
 
-% Chapitre 2, Page 47
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CHAPTER 2, Page 47
+
 chapitre(2, [verbe(chercher) - 'to look for',
              verbe(aimer) - 'to like',
              verbe(diner) - 'to dine',
@@ -49,7 +122,9 @@ chapitre(2, [verbe(chercher) - 'to look for',
 %%think_about(Object) :- 
 %%expression('to think that', object(Object)) --> verbe(penser), {think_about(Object)}.
 
-% Chapitre 3 Page 63
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CHAPTER 3 (p63)
+
 chapitre(3, [verbe(aller) - 'to go',
              verbe(venir) - 'to come',
              verbe(devenir) - 'to become',
@@ -59,7 +134,9 @@ conj_présent(aller, [vais, vas, va, allons, allez, vont]).
 passé_composé_aux(aller, être).
 passé_composé_part(aller, allé).
 
-% Chapitre 4
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Chapitre 4
+
 chapitre(4, [verbe(avoir) - 'to have',
              verbe(faire) - 'to do']).
 
@@ -81,11 +158,11 @@ subject_verbe(ils, L, X) :- nth(6, L, X).
 %% subject_verbes(S, Inf) --> {singular(S), conj_présent(Inf, L), nth(3, L, X)}
 %% subject_verbes(S, Inf) --> {plural(S), conj_présent(Inf, L), nth(6, L, X)}
 
-verbe_conjugate(Subj, Inf, Conjer) -->
+action(Subj, Inf, Conjer) -->
     {Conj =.. [Conjer, Inf, L], call(Conj), subject_verbe(Subj, L, V)}, [V].
 
 avoir_expression(Subj, Conjer, Adj) -->
-    {subject(Subj)}, [Subj], verbe_conjugate(Subj, avoir, Conjer), Adj.
+    {subject(Subj)}, [Subj], action(Subj, avoir, Conjer), Adj.
 
 chapitre(4, [expression('to be hot'), expression('to be cold'),
              expression('to be hungry'), expression('to be thirsty'),
@@ -93,17 +170,28 @@ chapitre(4, [expression('to be hot'), expression('to be cold'),
              expression('to have desire'), expression('to have the air of'),
              expression('to be ashamed of')]).
 
-expression('to be hot', Subj, Conjer) --> avoir_expression(Subj, Conjer, [chaud]).
-expression('to be cold', Subj, Conjer) --> avoir_expression(Subj, Conjer, [froid]).
-expression('to be hungry', Subj, Conjer) --> avoir_expression(Subj, Conjer, [faim]).
-expression('to be thirsty', Subj, Conjer) --> avoir_expression(Subj, Conjer, [soif]).
-expression('to be ashamed of', Subj, Conjer) --> avoir_expression(Subj, Conjer, [honte,de]).
-expression('to be afraid', Subj, Conjer) --> avoir_expression(Subj, Conjer, [peur]).
-expression('to be in need', Subj, Conjer) --> avoir_expression(Subj, Conjer, [besoin]).
-expression('to have desire', Subj, Conjer) --> avoir_expression(Subj, Conjer, [envie]).
-expression('to have the air of', Subj, Conjer) --> avoir_expression(Subj, Conjer, [le, air]).
+expression('to be hot', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [chaud]).
+expression('to be cold', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [froid]).
+expression('to be hungry', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [faim]).
+expression('to be thirsty', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [soif]).
+expression('to be ashamed of', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [honte,de]).
+expression('to be afraid', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [peur]).
+expression('to be in need', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [besoin]).
+expression('to have desire', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [envie]).
+expression('to have the air of', Subj, Conjer) -->
+    avoir_expression(Subj, Conjer, [le, air]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chapitre 6, Page 123.
+
 chapitre(6, [verbe(pouvoir) - 'to be able',
              verbe(vouloir) - 'to want',
              verbe(commencer) - 'to begin',
@@ -144,6 +232,7 @@ conj_présent(répéter, [répète, répètes, répète,
 conj_présent(acheter, [achète, achètes, achète,
                        achetons, achetez, achètent]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chapitre 7
 
 chapitre(7, [verbe(prendre) - 'to take',
@@ -178,6 +267,7 @@ passé_composé_part(devoir, dû).
 conj_présent(boire, [bois, bois, boit, buvons, buvez, boivent]).
 passé_composé_part(boire, bu).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chapitre 8 - Page 163
 
 chapitre(8, [verbe(répondre) - 'to answer',
@@ -231,6 +321,8 @@ passé_composé_part(Infinitif, PassePart) :-
 %% :- initialization('définez_régulier'(rendre, 'to return (something), to render, to make', avoir-rendu)).
 %% :- initialization('définez_régulier'(vendre, 'to sell', avoir-vendu)).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 chapitre(10, [verbe(voir) - 'to see',
               verbe(croir) - 'to believe',
               verbe(recevoir) - 'to receive/entertain']).
@@ -241,6 +333,7 @@ conj_présent(croir, [crois, crois, croit, croyons, croyez, croient]).
 passé_composé_part(recevoir, reçu).
 conj_présent(recevoir, [reçois, reçois, reçoit, recevons, recevez, reçoivent]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chapitre 11 - Page 226
 
 chapitre(11, [verbe(finir) - 'to finish',
@@ -248,8 +341,7 @@ chapitre(11, [verbe(finir) - 'to finish',
               verbe(choisir) - 'to choose',
               verbe(obéir) - 'to obey',
               verbe(réflechir) - 'to reflect',
-              verbe(réussir) - 'to succeed',
-              verbe(finir) - 'to finish']).
+              verbe(réussir) - 'to succeed']).
 
 % Chapter ?
 % phrases for forming questiong
@@ -287,6 +379,7 @@ définez_régulier_pronominal(Infinitif, Anglais) :-
 :- initialization(définez_régulier_pronominal(coucher, 'to go to bed')).
 :- initialization(définez_régulier_pronominal(endormir, 'to fall asleep')).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chapitre 12
 
 chapitre(12, [verbe(dire) - 'to say',
@@ -297,9 +390,10 @@ conj_présent(dire, [dis, dis, dit, disons, dites, disent]).
 passé_composé_part(dire, dit).
 conj_présent(lire, [lis, lis, lit, lisons, lites, lisent]).
 passé_composé_part(lire, lu).
-conj_présent(écrire, [écris, écris, écrit, écrisons, écrites, écrisent]).
+conj_présent(écrire, [écris, écris, écrit, écrivons, écrives, écrivent]).
 passé_composé_part(écrire, écrit).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chapitre 13
 
 chapitre(13,
@@ -385,6 +479,28 @@ chapitre(14, [nom(demain, m) - tomorrow,
 
 expression('airline gate', _, _) --> [porte, de, embarquement].
 
+adjectif_genres(adjectif(M/F), M, F) :- !.
+adjectif_genres(adjectif(M-Suffix), M, F) :- !, atom_concat(M, Suffix, F).
+adjectif_genres(adjectif(A), A, A).
+
+adverb(Adjectif, Adverb) :-
+    adjectif_genres(Adjectif, M, _),
+    \+ member(M, [fou, gentil]),
+    % only use the masculine for verbs ending in these vowels
+    (atom_concat(_, 'i', M);
+     atom_concat(_, 'é', M);
+     atom_concat(_, 'u', M)), !,
+    % -ant or -ent endings are different
+    (atom_concat(Pre, 'ant', M), !,
+     atom_concat(Pre, 'amment', Adverb);
+     atom_concat(Pre, 'ent', M), !,
+     atom_concat(Pre, 'emment', Adverb);
+     atom_concat(M, 'ment', Adverb)).
+
+adverb(Adjectif, Adverb) :-
+    adjectif_genres(Adjectif, _, F),
+    atom_concat(F, 'ment', Adverb).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chapter 15
 
@@ -395,7 +511,7 @@ chapitre(15, [verbe(ouvrir) - 'to open',
               verbe(souffrir) - 'to suffer',
               verbe(fermer) - 'to close',
               verbe(accueillir) - 'to welcome',
-              nom('pays d''asile', m) - 'country of asylum',
+              nom('pay d''asile', m) - 'country of asylum',
               nom(immigré, m) - 'immigrant',
               nom(réfugié, m) - 'refugee',
               nom(intégration, f) - 'integration',
@@ -404,25 +520,214 @@ chapitre(15, [verbe(ouvrir) - 'to open',
               nom(siécle, m) - 'century',
               expression - 'take advantage of it',
               nom('Maghreb', m) - 'north african',
-              adjectif(maghrébin-e) - 'north african'              
+              adjectif(maghrébin-e) - 'north african',
+              verbe(vivre) - 'to live',
+              verbe(suivre) - 'to follow',
+              verbe(pursuivre) - 'to pursue'
              ]).
 
+% conjugations like ouvrir are exactly like regular -er verbs
 conj_présent(Infinitif, L) :-
     member(Infinitif, [ouvrir, couvrir, offrir, découvrir, souffrir]), !,
     atom_concat(Root, ir, Infinitif),
     atom_concat(Root, er, Fake),
     conj_présent(Fake, L).
 
+% except for the past participle
 passé_composé_part(Infinitif, Part) :-
     member(Infinitif, [ouvrir, couvrir, offrir, découvrir, souffrir]), !,
     atom_concat(Root, rir, Infinitif),
     atom_concat(Root, ert, Part).
 
 expression('take advantage of it', S, Conj) -->
-    [S], verbe_conjugate(S, profiter, Conj), [de, il].
+    [S], action(S, profiter, Conj), [de, il].
 
 conj_présent(accueillir, [accueille, accueilles, accueille,
                           accueillons, accueillez, accueillent]).
+
+conj_présent(vivre, [vis, vis, vit, vivons, vivez, vivent]).
+passé_composé_part(vivre, vécu).
+conj_présent(suivre, [suis, suis, suit, suivons, suivez, suivent]).
+passé_composé_part(suivre, suivi).
+conj_présent(pursuivre, [pursuis, pursuis, pursuit,
+                         pursuivons, pursuivez, pursuivent]).
+passé_composé_part(pursuivre, pursuivi).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CHAPTER 16
+
+chapitre(16, [verbe(skier) - 'to ski',
+              expression - 'to downhill ski',
+              expression - 'to snowboard',
+              expression - 'to crosscountry ski',
+              expression - 'to rock climb',
+              expression - 'to photograph',
+              expression - 'to camp',
+              expression - 'to paraglide',
+              expression - 'to ride a bike',
+              expression - 'to ride a horse',
+              expression - 'to hike',
+              nom(camping, m) - 'campground',
+              nom(casque, m) - helmet,
+              nom(patin, m) - 'ice skate',
+              nom(piste, f) - trail,
+              nom(vacance, f) - vacation,
+              expression - 'to play hockey',
+              verbe(patiner) - 'to ice skate',
+              expression - 'to ice skate',
+              expression - 'to take a photograph',
+              nom(cerf, m) - stag,
+              nom(chat, m) - cat,
+              nom(cheval, m) - horse,
+              nom(chien, m) - dog,
+              nom(lapin, m) - rabbit,
+              nom(oiseau, m) - bird,
+              nom(ours, m) - bear,
+              nom(poisson, m) - fish,
+              nom(souris, f) - mouse,
+              verbe(nager) - 'to swim',
+              expression - 'to water ski',
+              expression - 'to sail',
+              expression - 'to play golf',
+              expression - 'to have a picnic',
+              verbe('pique-niquer') - 'to picnic',
+              expression - 'to have a party',
+              expression - 'to go fishing',
+              expression - 'to windsurf',
+              expression - 'to go canoeing',
+              expression - 'to play frisbee with your dog'
+             ]).
+
+faire_expression(S, Conj) -->
+    [S], action(S, faire, Conj).
+
+expression('to downhill ski', S, Conj) -->
+    faire_expression(S, Conj), [du, ski].
+
+expression('to snowboard', S, Conj) -->
+    faire_expression(S, Conj), [du, surf, des, neiges].
+
+expression('to crosscountry ski', S, Conj) -->
+    faire_expression(S, Conj), [du, ski, de, fond].
+
+expression('to rock climb', S, Conj) -->
+    faire_expression(S, Conj), [de, 'l''escalade'].
+
+expression('to photograph', S, Conj) -->
+    faire_expression(S, Conj), [de, la, photographie].
+
+expression('to camp', S, Conj) -->
+    faire_expression(S, Conj), [du, camping].
+
+expression('to paraglide', S, Conj) -->
+    faire_expression(S, Conj), [du, parapente].
+
+expression('to ride a bike', S, Conj) -->
+    faire_expression(S, Conj), [du, velo].
+
+expression('to ride a horse', S, Conj) -->
+    [S], action(S, monter, Conj), [à, cheval].
+
+expression('to hike', S, Conj) -->
+    faire_expression(S, Conj), [une, randonnée].
+
+expression('to ice skate', S, Conj) -->
+    faire_expression(S, Conj), [de, le, patin, à, glace].
+
+expression('to take a photograph', S, Conj) -->
+    [S], action(S, prendre, Conj), [une, photo].
+
+expression('to play hockey', S, Conj) -->
+    [S], action(S, jouer, Conj), [au, hockey]. 
+
+expression('to water ski', S, Conj) -->
+    faire_expression(S, Conj), [du, ski, nautique].
+
+expression('to sail', S, C) -->
+    faire_expression(S, C), [de, la, voile].
+
+expression('to play golf', S, C) -->
+    [S], action(S, jouer, C), [au, golf].
+
+expression('to have a picnic', S, C) -->
+    faire_expression(S, C), [un, 'pique-nique'].
+
+expression('to have a party', S, C) -->
+    [S], action(S, aller, C), [à, une, fête].
+
+expression('to go fishing', S, C) -->
+    faire_expression(S, C), [à, la, pêche].
+
+expression('to windsurf', S, C) -->
+    faire_expression(S, C), [de, la, planche, à, voile].
+
+expression('to go canoeing', S, C) -->
+    faire_expression(S, C), [du, canoë].
+
+expression('to play frisbee with your dog', S, C) -->
+    [S], action(S, jouer, C), {possessive(S, P)}, [au, frisbee, avec, P, chien].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CHAPTER 17
+
+avoir_suffix(Root, [Je, Tu, Il, Nous, Vous, Ils]) :-
+    atom_concat(Root, ai, Je),
+    atom_concat(Root, as, Tu),
+    atom_concat(Root, a, Il),
+    atom_concat(Root, ons, Nous),
+    atom_concat(Root, ez, Vous),
+    atom_concat(Root, ont, Ils).
+
+%% Irregularities.
+
+irregular_future([aller - 'to go',
+		  avoir - 'to have',
+		  devoir - 'to need to',
+		  envoyer - 'to send',
+		  être - 'to be',
+		  faire - 'to make',
+		  pouvoir - 'to be able to',
+		  savoir - 'to know',
+		  venir - 'to come',
+		  revenir - 'to return',
+		  devenir - 'to become',
+		  voir - 'to see',
+		  recevoir - 'to receive',
+		  vouloir - 'to want',
+		  acheter - 'to buy',
+		  appeler - 'to call',
+		  payer - 'to pay']).
+
+conj_future(aller, Conj) :- avoir_suffix(ir, Conj).
+conj_future(avoir, Conj) :- avoir_suffix(aur, Conj).
+conj_future(devoir, Conj) :- avoir_suffix(devr, Conj).
+conj_future(envoyer, Conj) :- avoir_suffix(enverr, Conj).
+conj_future(être, Conj) :- avoir_suffix(ser, Conj).
+conj_future(faire, Conj) :- avoir_suffix(fer, Conj).
+conj_future(pouvoir, Conj) :- avoir_suffix(pourr, Conj).
+conj_future(savoir, Conj) :- avoir_suffix(saur, Conj).
+conj_future(venir, Conj) :- avoir_suffix(viendr, Conj).
+conj_future(revenir, Conj) :- avoir_suffix(reviendr, Conj).
+conj_future(devenir, Conj) :- avoir_suffix(deviendr, Conj).
+conj_future(voir, Conj) :- avoir_suffix(verr, Conj).
+conj_future(recevoir, Conj) :- avoir_suffix(recevr, Conj).
+conj_future(vouloir, Conj) :- avoir_suffix(voudr, Conj).
+
+%% Spelling changes.
+conj_future(acheter, Conj) :- avoir_suffix(achèter, Conj).
+conj_future(appeler, Conj) :- avoir_suffix(appeller, Conj).
+conj_future(payer, Conj) :- avoir_suffix(paier, Conj).
+
+%% Regular form for -er and -ir verbs.
+conj_future(Infinitif, Conj) :-
+    (atom_concat(_, er, Infinitif);
+     atom_concat(_, ir, Infinitif)),
+    avoir_suffix(Infinitif, Conj).
+
+%% Regular form for -re verbs.
+conj_future(Infinitif, Conj) :-
+    atom_concat(Root, re, Infinitif),
+    avoir_suffix(Root, Conj).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Regular verb conjugations go at the end.

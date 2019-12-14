@@ -1,3 +1,4 @@
+%% -*- prolog -*-
 :- discontiguous(quiz_mot/4).
 
 record_success(stats(Correct0, Total0), stats(Correct, Total)) :-
@@ -85,9 +86,13 @@ permute_list_(L0, L) :-
 quiz_mots(L, Conjer, Stats) :- quiz_mots(L, Conjer, stats(0, 0), Stats).
 quiz_mots([], _, Stats, Stats).
 quiz_mots([Mot|L], Conjer, StatsIn, StatsOut) :-
-    write(Mot), 
+    %write(Mot), 
     nl,
-    catch(quiz_mot(Mot, Conjer, StatsIn, Stats), passez_ce_mot(Stats), true),
+    catch((quiz_mot(Mot, Conjer, StatsIn, Stats);
+           format('Internal error: quiz_mot failed on ~w', [Mot]),
+           StatsIn = Stats
+          ),
+          passez_ce_mot(Stats), true),
     !,
     quiz_mots(L, Conjer, Stats, StatsOut).
 
@@ -135,6 +140,11 @@ quiz_mot(Verbe-Anglais, Conjer, StatsIn, StatsOut) :-
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 
+maybe :-
+    randomize,
+    random(X),
+    X < 0.5.
+
 probably(P) :-
     randomize,
     random(X),
@@ -159,18 +169,20 @@ quiz_mot(nom(A0, G)-Anglais, _, StatsIn, StatsOut) :-
     join_mots([Art, A0], A),
     quiz_questions([Q-A], StatsIn, StatsOut).
 
-random_gender(G) :- permute_list([m, f], [G|_]).
+%% random_gender(G) :- permute_list([m, f], [G|_]).
 
-genderize_adjectif(adjectif(Masc/_), m, Masc).
-genderize_adjectif(adjectif(Masc-_), m, Masc).
-genderize_adjectif(adjectif(Masc), m, Masc).
-genderize_adjectif(adjectif(_/F), f, F).
-genderize_adjectif(adjectif(Adj-Suffix), f, F) :- atom_concat(Adj, Suffix, F).
-genderize_adjectif(adjectif(F), f, F).
+%% maybe :- randomize, random(X), X <= 0.5.
+
+%% genderize_adjectif(adjectif(Masc/_), m, Masc).
+%% genderize_adjectif(adjectif(Masc-_), m, Masc).
+%% genderize_adjectif(adjectif(Masc), m, Masc).
+%% genderize_adjectif(adjectif(_/F), f, F).
+%% genderize_adjectif(adjectif(Adj-Suffix), f, F) :- atom_concat(Adj, Suffix, F).
+%% genderize_adjectif(adjectif(F), f, F).
 
 quiz_mot(adjectif(Adj)-Anglais, _, StatsIn, StatsOut) :-
-    random_gender(G),
-    genderize_adjectif(adjectif(Adj), G, A),
+    adjectif_genres(adjectif(Adj), M, F),
+    permute_list([m-M, f-F], [G-A|_]),
     format_to_atom(Q, '~a (~a) ?', [Anglais, G]),
     quiz_questions([Q-A], StatsIn, StatsOut).
 
@@ -198,26 +210,6 @@ random_subject(Subj) :-
 
 random_subject(Subj, [Subj|_]).
 random_subject(Subj, [_|L]) :- random_subject(Subj, L).
-
-join_mots([], '') :- !.
-join_mots(L, A) :- join_mots(L, '', A).
-join_mots([], A, B) :- atom_concat(' ', B, A).
-
-join_mots([X,Y|L], A, B) :-
-    memberchk(X, [je, le, la, de]),
-    atom_chars(X, [Xhead|_]),
-    atom_chars(Y, [Yhead|Yrest]),
-    memberchk(Yhead, [a, á, à, e, é, è, i]),
-    atom_chars(Z, [Xhead,'''',Yhead|Yrest]),
-    atom_concat(A, ' ', A0),
-    atom_concat(A0, Z, A1),
-    !,
-    join_mots(L, A1, B).
-
-join_mots([X|L], A, B) :-
-    atom_concat(A, ' ', A0),
-    atom_concat(A0, X, A1),
-    join_mots(L, A1, B).
 
 expression_questionnes(Anglais, Conjer, [Questionne-Answer]) :-
     random_subject(Subj), !,
@@ -249,3 +241,20 @@ quiz_all_expr :-
     catch(quiz_expressions(L, conj_présent, Stats),
           passez_tout_mots(Stats), true),
     affichez_stats(Stats).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+quiz_future :-
+    irregular_future(L0),
+    findall(verbe(X)-Y, member(X-Y, L0), L),
+    quiz(L, conj_future).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+quiz_verbes :-
+    findall(X, chapitre(_N, X), L0),
+    flatten(L0, L1),
+    findall(verbe(Inf)-Ang, member(verbe(Inf)-Ang, L1), L2),
+    

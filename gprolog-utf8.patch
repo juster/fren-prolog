@@ -1,0 +1,20 @@
+From 2295008e2e1b51bc9f1ca52612b303f64c0e9303 Mon Sep 17 00:00:00 2001
+From: Justin Davis <jrcd83@gmail.com>
+Date: Mon, 21 Oct 2019 17:49:17 -0400
+Subject: [PATCH] Advance string-stream pointer after writing to it.
+
+---
+ src/BipsPl/stream_supp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/BipsPl/stream_supp.c b/src/BipsPl/stream_supp.c
+index 492c7610..c7a207a8 100644
+--- a/src/BipsPl/stream_supp.c
++++ b/src/BipsPl/stream_supp.c
+@@ -1964,5 +1964,5 @@ Str_Stream_Putc(CHAR32_T c, StrSInf *str_stream)
+       str_stream->ptr = str_stream->buff + size;
+     }
+ 
+-  put_wchar(str_stream->ptr, str_stream->buff_alloc_size - 1, c);
++  str_stream->ptr += put_wchar(str_stream->ptr, str_stream->buff_alloc_size - 1, c);
+ }

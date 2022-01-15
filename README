@@ -1,0 +1,26 @@
+FREN201 et Prolog
+
+In Fall 2019 I took FREN201 (for the third time). I had already been playing
+with Prolog and I needed a way to drill word definitions. Considering Prolog
+was invented by a Frenchman this seemed a lovely combo :). Parsing in Prolog
+is also quite nice, even being its early focus, but I never got that far.
+
+Verbs, nouns, and maybe simple word combinations are declared in dict.pl. The
+quiz.pl program reads from these and predictibly quizzes you on them.
+
+I passed the class with a B. The drilling helped immensely. Of course the
+tres belle instructor Mademoiselle Armant was really quite a good teacher.
+
+I've extracted from my school repo to save for posterity (i.e. myself later).
+The prolog I used was gprolog but you need the gprolog-utf8 fork. You also need
+a patch I made to fix some bugs (included as gprolog-utf8.patch).
+
+FILES
+
+dict.pl		Dictionary of French words. Conjugations, etc.
+quiz.pl		Quiz program
+munge.pl	Some perl script! I forget?
+random.pl	Utility functions for random selection, etc.
+util.pl		More utility functions missing from gprolog
+
+Justin Davis <jrcd83@gmail.com>

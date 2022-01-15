@@ -1,4 +1,5 @@
 %% -*- prolog -*-
+
 :- discontiguous(quiz_mot/4).
 
 record_success(stats(Correct0, Total0), stats(Correct, Total)) :-
@@ -69,20 +70,6 @@ quiz_questions([Question-Response|L], StatsIn, StatsOut) :-
 %%     select_random(X, L0, L), !.
 %% select_random(X, [X|L], L).
 
-key_random([], []).
-key_random([V|L0], [K-V|L]) :- random(K), key_random(L0, L).
-
-pair_values([], []).
-pair_values([_-V|L0], [V|L]) :- pair_values(L0, L).
-
-permute_list(L0, L) :-
-    randomize,
-    permute_list_(L0, L).
-permute_list_(L0, L) :-
-    key_random(L0, Keyed0),
-    keysort(Keyed0, Keyed),
-    pair_values(Keyed, L).
-
 quiz_mots(L, Conjer, Stats) :- quiz_mots(L, Conjer, stats(0, 0), Stats).
 quiz_mots([], _, Stats, Stats).
 quiz_mots([Mot|L], Conjer, StatsIn, StatsOut) :-
@@ -140,16 +127,6 @@ quiz_mot(Verbe-Anglais, Conjer, StatsIn, StatsOut) :-
     write_anglais(Anglais), nl,
     quiz_questions(QAs, StatsIn, StatsOut).
 
-maybe :-
-    randomize,
-    random(X),
-    X < 0.5.
-
-probably(P) :-
-    randomize,
-    random(X),
-    X < P.
-
 déf_article(m, sg, le).
 déf_article(f, sg, la).
 déf_article(m, pl, les).
@@ -157,15 +134,20 @@ déf_article(f, pl, las).
 
 indéf_article(m, sg, un).
 indéf_article(f, sg, une).
+indéf_article(m, pl, des).
+indéf_article(f, pl, des).
 
-rand_article(G, N, Art, def) :- probably(0.5), déf_article(G, N, Art), !.
-rand_article(G, N, Art, indef) :- indéf_article(G, N, Art).
+rand_article(G, N, Art) :-
+    random_member(T, [déf, indéf]),
+    rand_article(G, N, Art, T).
+rand_article(G, N, Art-the, déf) :- déf_article(G, N, Art).
+rand_article(G, N, Art-a, indéf) :- indéf_article(G, N, Art).
 
 quiz_mot(nom(A0, G)-Anglais, _, StatsIn, StatsOut) :-
-    rand_article(G, sg, Art, T),
-    (T = def, atom_concat('the ', Anglais, Q0);
-     T = indef, atom_concat('a ', Anglais, Q0)),
-    atom_concat(Q0, '?', Q),
+    rand_article(G, sg, Art-ArtAng),
+    atom_concat(ArtAng, ' ', Q0),
+    atom_concat(Q0, Anglais, Q1),
+    atom_concat(Q1, '?', Q),
     join_mots([Art, A0], A),
     quiz_questions([Q-A], StatsIn, StatsOut).
 
@@ -251,11 +233,14 @@ quiz_future :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-quiz_verbes :-
+findall_verbes(Vs) :-
     findall(X, chapitre(_N, X), L0),
     flatten(L0, L1),
-    findall(verbe(Inf)-Ang, member(verbe(Inf)-Ang, L1), L2),
-    quiz_verbes(L2).
+    findall(verbe(Inf)-Ang, member(verbe(Inf)-Ang, L1), Vs).
+
+quiz_verbes :-
+    findall_verbes(Vs),
+    quiz_verbes(Vs).
     
 quiz_verbes(Vs0) :-
     permute_list(Vs0, Vs),
@@ -290,3 +275,62 @@ quiz_verbe(Verbe, Stats0, Stats) :-
     permute_list([present, passe, future, imparfait, infinitive], [Tense|_]),
     quiz_verbe_qa(Verbe, Subject, Tense, QA),
     quiz_questions([QA], Stats0, Stats).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+quiz_subject(nom(X,f)) :- subject(X).
+quiz_subject(nom(X,m)) :- subject(X).
+quiz_subject(nom('Camille',f)).
+quiz_subject(nom('Rachid',m)).
+
+random_sujet(S) :-
+    findall(S, quiz_subject(S), L),
+    random_member(S, L).
+
+random_verbe(V) :-
+    findall_verbes(Vs),
+    random_member(V, Vs).
+
+si_sentence1(V1-A1, V2-A2) -->
+    {random_sujet(nom(S1,G)), random_verbe(V1-A1), random_sujet(nom(S2,G)), random_verbe(V2-A2)},
+    [si], subject_verbe_expr(S1, V1, present), [que], subject_verbe_expr(S2, V2, future).
+
+si_sentence2(V1-A1, V2-A2) -->
+    {random_sujet(nom(S1,G)), random_verbe(V1-A1), random_sujet(nom(S2,G)), random_verbe(V2-A2)},
+    subject_verbe_expr(S1, V1, future), [si], subject_verbe_expr(S2, V2, present).
+
+conj_all(verbe(V), L) :-
+    conj_présent(V, L1),
+    conj_future(V, L2),
+    conj_imparfait(V, L3),
+    flatten([L1, L2, L3], L),
+    !.
+
+random_si_sentence(X, Y, Mots) :-
+    random_member(A, [si_sentence1, si_sentence2]),
+    Phrase =.. [A, X, Y],
+    Term =.. [phrase, Phrase, Mots],
+    call(Term).
+
+si_question(Q, A) :-
+    random_si_sentence(V1-A1, V2-A2, Mots0),
+    conj_all(V1, L1),
+    conj_all(V2, L2),
+    member(X, L1), member(X, Mots0),
+    member(Y, L2), member(Y, Mots0),
+    %% BUG: when verb V1 and V2 are identical, only one answer is replaced.
+    replace(X, verbe(A1), Mots0, Mots1),
+    replace(Y, verbe(A2), Mots1, Mots2),
+    write_to_atom(Q, Mots2),
+    join_mots(Mots0, A),
+    !.
+
+quiz_si_que :-
+    catch(quiz_si_que(stats(0,0), Stats), passez_tout_mots(Stats), (write('Aborted'), nl)),
+    affichez_stats(Stats).
+
+quiz_si_que(Stats0, Stats) :-
+    !,
+    si_question(Q, A),
+    catch(quiz_question(Q, A, Stats0, Stats1), passez_ce_mot(Stats1), (write('Skipped'), nl)),
+    quiz_si_que(Stats1, Stats).
